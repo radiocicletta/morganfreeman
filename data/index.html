@@ -1,0 +1,143 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Icestats</title>
+    <script type="text/javascript" src="/data/js/zepto.min.js"></script>
+    <script type="text/javascript" src="/data/js/icestats.js"></script>
+    <style type="text/css">
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 100%;
+    font: inherit;
+    vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+    display: block;
+}
+body {
+    line-height: 1;
+}
+ol, ul {
+    list-style: none;
+}
+blockquote, q {
+    quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+    content: '';
+    content: none;
+}
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+    </style>
+    <style type="text/css">
+body {
+    font-family: "Helvetica Neue", "Myriad Pro", Arial, sans-serif;
+    font-size: 12pt;
+    color: #333;
+    background: #999;
+    font-weight: 100;
+}
+body div.content {
+    background: white;
+}
+div.contentbody {
+    margin: auto;
+    width: 790px;
+}
+
+h1, h2, h3, h4, h5 {
+    font-weight: bold;
+    padding: 20px 10px 10px;
+    letter-spacing: 2px;
+}
+.inset { 
+    color: #aaa;
+    text-shadow: rgba(255,255,255,0.7) 1px 1px 0px, rgba(10, 10, 10, 0.5) -1px -1px 0px ; }
+
+input[type="text"].editable {
+    border: none;
+    font-family: "Helvetica Neue", "Myriad Pro", Arial, sans-serif;
+    font-size: inherit;
+    overflow: visible;
+    width: auto;
+    background: inherit;
+    color: #999;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    padding: 2px 5px;
+}
+
+
+input[type="text"]:hover.editable,
+input[type="text"]:focus.editable {
+    color: inherit; 
+    background: white;
+}
+
+.subhead {
+    padding: 10px;
+    background: #eee;
+    font-size: 90%;
+    text-shadow: 1px 1px 0px rgba(255,255,255, 0.9);
+}
+
+h1 {
+    font-size: 200%;
+    background: #aaa;
+    box-shadow: inset 0px -6px 12px #666;
+    font-weight: 100;
+}
+h2 { font-size: 130%; }
+h3 { font-size: 120%; }
+h4 { font-size: 117%; }
+h5 { font-size: 110%; }
+    </style>
+</head>
+<body>
+    <div class="content">
+    <h1 class="inset">Morgan Freeman</h1>
+
+    <div class="subhead">
+        <strong>Range:</strong>
+        <input type="text" class="editable" id="input-rangestart"/>/
+        <input type="text" class="editable" id="input-rangestop"/>
+        <strong>Current listeners:</strong>
+    </div>
+
+    <div class="contentbody">
+        <h2>Unique listeners &mdash; Global stats</h2>
+        <canvas id="linechrt-global"></canvas>
+        <h2>Hourly listener frequency  &mdash; Global stats</h2>
+        <canvas id="dotchrt-global"></canvas>
+        <h2>Listeners by player &mdash; Global stats</h2>
+        <canvas id="barchrt-global"></canvas>
+    </div>
+    </div>
+</body>
+</html>
