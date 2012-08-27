@@ -1,0 +1,5 @@
+server-side statistics tool for icecast server
+
+* collects real data about listeners on single streams
+* statistics visualization by html5 web app
+* full client-side data manipulation
