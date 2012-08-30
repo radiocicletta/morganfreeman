@@ -1495,11 +1495,19 @@
     }
 
 
-    function gr_barchart(canvas, data, xlabels, ylabels) {
+    function gr_barchart(canvas, data, xlabels, ylabels, orientation) {
         var width = canvas.width,
             height = canvas.height,
             ctx = canvas.getContext('2d');
         
+        if (width <= height || orientation == 'vertical') {
+            ctx.translate(width, 0);
+            ctx.rotate(Math.PI/2);
+            var swap = width;
+            width = height;
+            height = swap;
+        }
+
         var max = (function(a){var max=0; for(var i=a.length; i >=0; i--) if (a[i] > max) max = a[i]; return max;})(data);
 
         var xratio = width / data.length,
@@ -1508,7 +1516,7 @@
             ystep = (yratio < 20? Math.round(20 / yratio): 1),
             xstep = (xratio < 20? Math.round(20 / xratio): 1),
 
-            xpadding = (xratio > 10? (xratio - 10) / 2: 0),
+            xpadding = (xratio > 4? (xratio - 4) / 2: 0),
 
             i,j,x,y;
 
@@ -1516,8 +1524,10 @@
             textBaseline: ctx.textBaseline,
             textAlign: ctx.textAlign
         };
+
+
         ctx.textBaseline = "bottom";
-        ctx.textAlign = "center";
+        ctx.textAlign = "left";
 
         ctx.beginPath();
         ctx.moveTo(xpadding, height);
@@ -1533,8 +1543,15 @@
             ctx.lineTo(x + xratio * xstep, y);
             ctx.lineTo(x + xratio * xstep, height);
             ctx.lineTo(x + xratio * xstep + xpadding, height);
-            if (xlabels[i])
-               ctx.fillText(xlabels[i], x + xpadding, height); 
+            if (xlabels[i]) {
+                ctx.save();
+                ctx.translate(width/2, height);
+                ctx.rotate(-Math.PI/2);
+                ctx.fillStyle = "#000000";
+                //ctx.fillText(xlabels[i], x + xpadding, height); 
+                ctx.fillText(xlabels[i], 0,  x + xpadding - width/2); 
+                ctx.restore();
+            }
             y = height - data[i] * yratio;
         }
         ctx.lineTo(width, y);
@@ -1591,19 +1608,24 @@
         };
         var currentfillStyle = ctx.fillStyle;
 
-        var y_lbl = (ylabels || []);
-        var x_lbl = (xlabels || []);
+        var y_lbl = (ylabels || []),
+            x_lbl = (xlabels || []),
+            colors = [null, null, null];
 
         for (i = 0, y = height; i < rows; i++, y -= yratio * ystep) {
             var rmax = (normalize !== undefined ? max[i]: max);
             for (j = 0, x = 0; j < cols; j++, x += xratio * xstep) {
                 var color = heatcolor("classic", ((data[i * cols + j] || 0) / rmax));
                 ctx.fillStyle = "rgb" + color;
+                /*if (!colors[0])
+                    colors[0] = color;
+                colors[1] = color;*/
                 ctx.fillRect(x, y - yratio, xratio, yratio);
 
             }
         }
 
+        ctx.save();
         ctx.fillStyle = "#000000";
         ctx.textAlign = "left";
         ctx.textBaseline = "baseline";
@@ -1611,19 +1633,21 @@
         for (i = 0, y = height; i < rows; i++, y -= height / y_lbl.length) {
             ctx.fillText(y_lbl[i] || i, 0, y); 
         }
-
+        
+        ctx.restore();
+        ctx.save();
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
 
         for (j = 0, x = 0; j < cols; j++, x += width / x_lbl.length) {
             ctx.fillText(x_lbl[j] || j, x, height); 
         }
+        ctx.restore();
 
-
-        ctx.textBaseline = currenttextstyle.textBaseline;
+        /*ctx.textBaseline = currenttextstyle.textBaseline;
         ctx.textAlign = currenttextstyle.textAlign;
         ctx.font = currenttextstyle.font;
-        ctx.fillStyle = currentfillStyle;
+        ctx.fillStyle = currentfillStyle;*/
     }
 
     /*
@@ -1665,7 +1689,7 @@
     };
 
 
-    s.renderbarchart = function(chrt, data, width, height, key) {
+    s.renderbarchart = function(chrt, data, width, height, key, orientation) {
         var els = [];
         for (var k in data)
             els = els.concat(data[k]);
@@ -1688,7 +1712,7 @@
         canvas.width = width;
         canvas.height = height;
 
-        gr_barchart(canvas, new_els, x_lbl);
+        gr_barchart(canvas, new_els, x_lbl, [], orientation);
 
     };
 
@@ -1732,7 +1756,7 @@ $(document).ready(function(){
                     return;
                 stats.renderlinechart(linechrt_global, data, 640, 200);
                 stats.renderheatmap(dotchrt_global, data, 640, 320);
-                stats.renderbarchart(barchrt_global, data, 640, 320, 'useragent');
+                stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
             });
     //    },
     //10000);
