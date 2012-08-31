@@ -1601,34 +1601,32 @@
 
             i,j,x,y;
 
-        var currenttextstyle = { 
-            textBaseline: ctx.textBaseline,
-            textAlign: ctx.textAlign,
-            font: ctx.font
-        };
-        var currentfillStyle = ctx.fillStyle;
-
-        var y_lbl = (ylabels || []),
-            x_lbl = (xlabels || []),
-            colors = [null, null, null];
-
-        for (i = 0, y = height; i < rows; i++, y -= yratio * ystep) {
-            var rmax = (normalize !== undefined ? max[i]: max);
-            for (j = 0, x = 0; j < cols; j++, x += xratio * xstep) {
-                var color = heatcolor("classic", ((data[i * cols + j] || 0) / rmax));
-                ctx.fillStyle = "rgb" + color;
-                /*if (!colors[0])
-                    colors[0] = color;
-                colors[1] = color;*/
-                ctx.fillRect(x, y - yratio, xratio, yratio);
-
-            }
-        }
 
         ctx.save();
-        ctx.fillStyle = "#000000";
+
+        var y_lbl = (ylabels || []),
+            x_lbl = (xlabels || []);
+
+        for (i = 0, y = height; i < rows; i++, y -= yratio * ystep) {
+            var rmax = (normalize !== undefined ? max[i]: max),
+                gradient = ctx.createLinearGradient(0,0, width, 0);
+
+            for (j = 0, x = 0; j < cols; j++, x += xratio * xstep) {
+                var color = heatcolor("classic", ((data[i * cols + j] || 0) / rmax)).match(/\d+/g),
+                    hexcolor = (color[0] << 16 | color[1] << 8 | color[2]);
+                // since addColorStop wants colors in hex format, we need a conversion.
+                gradient.addColorStop( (((j/cols * 1000 + 0.005) << 1) >> 1) /1000, 
+                                       '#'+hexcolor.toString(16));
+
+            }
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, y - yratio, width, yratio);
+        }
+
+        ctx.restore();
+        ctx.save();
         ctx.textAlign = "left";
-        ctx.textBaseline = "baseline";
+        ctx.textBaseline = "bottom";
 
         for (i = 0, y = height; i < rows; i++, y -= height / y_lbl.length) {
             ctx.fillText(y_lbl[i] || i, 0, y); 
