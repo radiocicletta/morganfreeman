@@ -1609,14 +1609,30 @@
 
         for (i = 0, y = height; i < rows; i++, y -= yratio * ystep) {
             var rmax = (normalize !== undefined ? max[i]: max),
-                gradient = ctx.createLinearGradient(0,0, width, 0);
+                gradient = ctx.createLinearGradient(0,0, width, 0),
+                previous = 0,
+                previousstop = 0;
 
             for (j = 0, x = 0; j < cols; j++, x += xratio * xstep) {
-                var color = heatcolor("classic", ((data[i * cols + j] || 0) / rmax)).match(/\d+/g),
-                    hexcolor = (color[0] << 16 | color[1] << 8 | color[2]);
+
+                var value =(data[i * cols + j] || 0) / rmax,
+                    stop = (((j/cols * 1000 + 0.005) << 1) >> 1) /1000;
+ 
                 // since addColorStop wants colors in hex format, we need a conversion.
-                gradient.addColorStop( (((j/cols * 1000 + 0.005) << 1) >> 1) /1000, 
-                                       '#'+hexcolor.toString(16));
+
+                for (var k = previous , l = previousstop, koffset = (value - previous) / 4, loffset = (stop - previousstop) / 4;
+                     k < value && previous <= value || k > value && previous >= value;
+                      k += koffset, l += loffset){
+
+                    var color = heatcolor("classic", k).match(/\d+/g),
+                        hexcolor = (color[0] << 16 | color[1] << 8 | color[2]).toString(16);
+                    while(hexcolor.length < 6)
+                        hexcolor = '0' + hexcolor;
+
+                    gradient.addColorStop((((l * 1000 + 0.005) << 1)>> 1) / 1000 , '#'+hexcolor);
+                }
+                previous = value;
+                previousstop = stop;
 
             }
             ctx.fillStyle = gradient;
