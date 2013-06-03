@@ -1747,7 +1747,7 @@
 // THIS WILL GO IN A SEPARATE FILE ui.js
 
 
-$(document).ready(function(){
+$(function(){
 
     var linechrt_global = "linechrt-global";
     var dotchrt_global = "dotchrt-global";
@@ -1757,9 +1757,35 @@ $(document).ready(function(){
 
 //    var range = stats.range(new Date(new Date().getTime() - )new Date());
     var range = stats.range();
-    $("#input-rangestart")[0].value = range.start;
-    $("#input-rangestop")[0].value = range.stop;
-    //$("#input-rangestart, #input-rangestop")
+    $("#input-rangestart").datetimepicker({
+        language: 'it-IT'
+    }).on('changeDate', function(e){
+        stats.range(e.date);
+        $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
+            function(data){
+                if (data === null)
+                    return;
+                stats.renderlinechart(linechrt_global, data, 640, 200);
+                stats.renderheatmap(dotchrt_global, data, 640, 320);
+                stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
+            });
+    }).data('datetimepicker').setDate(range.start);
+
+    $("#input-rangestop").datetimepicker({
+        language: 'it-IT',
+        endDate: new Date()
+    }).on('changeDate', function(e){
+        stats.range(stats.range().start, e.date);
+        $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
+            function(data){
+                if (data === null)
+                    return;
+                stats.renderlinechart(linechrt_global, data, 640, 200);
+                stats.renderheatmap(dotchrt_global, data, 640, 320);
+                stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
+            });
+    }).data('datetimepicker').setDate(range.stop);
+
 
 
     //var interval = setInterval(function() {
@@ -1775,5 +1801,4 @@ $(document).ready(function(){
     //    },
     //10000);
 
-    console.log("icestats.js ready to whip your mother's ass");
 });
