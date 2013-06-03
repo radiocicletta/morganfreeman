@@ -3,29 +3,18 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Icestats</title>
-    <script type="text/javascript" src="/data/js/zepto.js"></script>
-    <script type="text/javascript" src="/data/js/zepto-extras.js"></script>
-    <script type="text/javascript">
-        if (!window.jQuery)
-            window.jQuery = window.Zepto;
-    </script>
-    <script type="text/javascript" src="/data/js/bootstrap.js"></script>
-    <script type="text/javascript" src="/data/js/icestats.js"></script>
-
     <style type="text/css">
     /* BUTSTREP PLS */
     body {
         padding-top: 60px;
         padding-bottom: 40px;
     }
-    .sidebar-nav {
-        padding: 9px 0;
-    }
     #image-info dd {
         white-space: nowrap;
     }
     </style>
     <link href="/data/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link rel="stylesheet" href="/data/css/bootstrap-datetimepicker.min.css" media="screen"/>
 </head>
 <body>
     <div class="navbar navbar-inverse navbar-fixed-top">
@@ -39,23 +28,47 @@
 
     <div class="container">
         <div class="row">
-            <div class="span9 well">
-                <strong>Range:</strong>
-                <input type="text" class="editable" id="input-rangestart"/>/
-                <input type="text" class="editable" id="input-rangestop"/>
-                <strong>Current listeners:</strong>
-            </div>
-        </div>
-        <div class="row">
-            <div class="span9">
-                <h2>Unique listeners &mdash; Global stats</h2>
-                <canvas id="linechrt-global"></canvas>
-                <h2>Hourly listener frequency  &mdash; Global stats</h2>
-                <canvas id="dotchrt-global"></canvas>
-                <h2>Listeners by player &mdash; Global stats</h2>
-                <canvas id="barchrt-global"></canvas>
+            <div class="span12">
+                <section class="well">
+                    <strong>Range:</strong>
+                    <div class="input-append date" id="input-rangestart">
+                        <input type="text" class="editable" data-format="dd/MM/yyyy hh:mm"/>
+                            <span class="add-on">
+                            <i data-time-icon="icon-time" data-date-icon="icon-calendar">&nbsp;</i>
+                            </span>
+                    </div>/
+                    <div class="input-append date" id="input-rangestop">
+                        <input type="text" class="editable" data-format="dd/MM/yyyy hh:mm"/>
+                            <span class="add-on">
+                            <i data-time-icon="icon-time" data-date-icon="icon-calendar">&nbsp;</i>
+                            </span>
+                    </div>
+                    <strong>Current listeners:</strong>
+                </section>
+                <section>
+                    <h2>Unique listeners &mdash; Global stats</h2>
+                    <canvas id="linechrt-global"></canvas>
+                </section>
+                <section>
+                    <h2>Hourly listener frequency  &mdash; Global stats</h2>
+                    <canvas id="dotchrt-global"></canvas>
+                </section>
+                <section>
+                    <h2>Listeners by player &mdash; Global stats</h2>
+                    <canvas id="barchrt-global"></canvas>
+                </section>
             </div>
         </div>
     </div>
+    <script type="text/javascript" src="/data/js/zepto.js"></script>
+    <script type="text/javascript" src="/data/js/zepto-extras.js"></script>
+    <script type="text/javascript">
+        if (!window.jQuery)
+            window.jQuery = window.Zepto;
+    </script>
+    <script type="text/javascript" src="/data/js/bootstrap.js"></script>
+    <script type="text/javascript" src="/data/js/bootstrap-datetimepicker.s"></script>
+    <script type="text/javascript" src="/data/js/icestats.js"></script>
+
 </body>
 </html>
