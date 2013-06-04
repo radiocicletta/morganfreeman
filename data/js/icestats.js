@@ -9,6 +9,7 @@
     var stopinterval = new Date();
     var startinterval = new Date(stopinterval.getTime() - kMonthMillisecs); // 30 days
 
+    // {{{
     var schemes = {'classic':
             ["(255, 237, 237)",
              "(255, 224, 224)",
@@ -1290,6 +1291,7 @@
              "(51, 53, 51)",
              "(51, 52, 51)",
              "(51, 52, 51)"]};
+    // }}}
 
     function heatcolor(map, percentage) {
         idx = ~~((schemes[map].length - 1) * (1 - percentage));
@@ -1390,7 +1392,6 @@
                     cycnum++;
                 }
         }
-        console.log("cycles: " + cycnum);
         return days;
     }
 
@@ -1403,8 +1404,7 @@
         var xrate = width  * rate;
         var yrate = height  * rate;
 
-        var currentstrokeStyle = ctx.strokeStyle;
-        var currentstrokeWidth = ctx.strokeWidth;
+        ctx.save();
         ctx.strokeStyle = "rgba(190,190,190,0.5)";
         ctx.strokeWidth = "0.5px";
 
@@ -1422,21 +1422,22 @@
             ctx.closePath();
             ctx.stroke();
         }
-
-        ctx.strokeStyle = currentstrokeStyle;
-        ctx.strokeWidth = currentstrokeWidth;
+        ctx.restore();
 
     }
 
 
     function gr_linechart(canvas, data, xlabels, ylabels) {
-        var width = canvas.width,
-            height = canvas.height,
-            ctx = canvas.getContext('2d');
-        
-        var max = (function(a){var max=0; for(var i=a.length; i >=0; i--) if (a[i] > max) max = a[i]; return max;})(data);
+        var max = (function(a){var max=0; for(var i=a.length; i >=0; i--) if (a[i] > max) max = a[i]; return max;})(data),
+            ctx = canvas.getContext('2d'),
+            textwidth = Math.ceil(ctx.measureText(max).width),
+            textheight = ~~ctx.font.match(/^\d+/)[0] + 1,
 
-        var xratio = width / data.length,
+            width = canvas.width - textwidth * 2,
+            height = canvas.height - textheight * 2,
+        
+
+            xratio = width / (data.length - 1),
             yratio = height / max,
 
             ystep = (yratio < 20? Math.round(20 / yratio): 1),
@@ -1444,39 +1445,49 @@
 
             i,j,x,y;
 
-        var currenttextstyle = { 
-            textBaseline: ctx.textBaseline,
-            textAlign: ctx.textAlign
-        };
+        ctx.save();
         ctx.textBaseline = "bottom";
-        ctx.textAlign = "center";
+        ctx.textAlign = "right";
 
         ctx.beginPath();
-        ctx.moveTo(0, height);
+        ctx.moveTo(textwidth, height + textheight);
 
         var strokeStyle = ctx.strokeStyle;
         var fillStyle = ctx.fillStyle;
+        var gradient = ctx.createLinearGradient(0,0, 0, height);
+        gradient.addColorStop(0,'#008300');
+        gradient.addColorStop(1,'#fff');
 
         ctx.strokeStyle = "#004300";
         ctx.fillStyle = "rgba(30, 30, 30, 0.3)";
 
-        for (i=0, x = 0, y = height; i < data.length; i += xstep, x += xratio * xstep) {
+        for (i=0, x = textwidth, y = height + textheight; i < data.length; i += xstep, x += xratio * xstep) {
+            y = height + textheight - data[i] * yratio;
             ctx.lineTo(x, y);
+            if (y < height) {
+                ctx.save();
+                ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                ctx.textAlign = "center";
+                ctx.fillText(data[i], x, y);
+                ctx.restore();
+            }
             if (xlabels[i])
-               ctx.fillText(xlabels[i], x, height); 
-            y = height - data[i] * yratio;
+               ctx.fillText(xlabels[i], x, height + textheight * 2); 
         }
-        ctx.lineTo(width, y);
-        ctx.lineTo(width, height);
+        ctx.lineTo(width + textwidth, y);
+        ctx.lineTo(width + textwidth, height + textheight);
         ctx.closePath();
         ctx.stroke();
+        ctx.save();
+        ctx.fillStyle = gradient;
         ctx.fill();
+        ctx.restore();
 
         ctx.strokeStyle = "rgba(0,0,0,0.2)";
-        for (i = height; i > 0; i -= yratio * ystep) {
+        for (i = height + textheight; i > 0; i -= yratio * ystep) {
             ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(width, i);
+            ctx.moveTo(textwidth, i);
+            ctx.lineTo(width + textwidth, i);
             ctx.closePath();
             ctx.stroke();
         }
@@ -1486,12 +1497,10 @@
         var y_lbl = (ylabels || []);
 
         ctx.textAlign = "left";
-        for (j=0, y = height; y > 0 ; j += ystep, y -= yratio * ystep) {
+        for (j=0, y = height + textheight; y > 0 ; j += ystep, y -= yratio * ystep) {
             ctx.fillText(y_lbl[j] || j, 0, y); 
         }
-
-        ctx.textBaseline = currenttextstyle.textBaseline;
-        ctx.textAlign = currenttextstyle.textAlign;
+        ctx.restore();
     }
 
 
@@ -1534,6 +1543,10 @@
 
         var strokeStyle = ctx.strokeStyle;
         var fillStyle = ctx.fillStyle;
+        var gradient = ctx.createLinearGradient(0,0, width, height);
+        gradient.addColorStop(0,'#333');
+        gradient.addColorStop(1,'#fff');
+
 
         ctx.strokeStyle = "#004300";
         ctx.fillStyle = "rgba(30, 30, 30, 0.3)";
@@ -1556,9 +1569,12 @@
         }
         ctx.lineTo(width, y);
         ctx.lineTo(width, height);
+        ctx.save();
         ctx.closePath();
         ctx.stroke();
+        ctx.fillStyle = gradient;
         ctx.fill();
+        ctx.restore();
 
         ctx.strokeStyle = "rgba(0,0,0,0.2)";
         for (i = height; i > 0; i -= yratio * ystep) {
@@ -1769,7 +1785,7 @@ $(function(){
                 stats.renderheatmap(dotchrt_global, data, 640, 320);
                 stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
             });
-    }).data('datetimepicker').setDate(range.start);
+    }).data('datetimepicker').setLocalDate(range.start);
 
     $("#input-rangestop").datetimepicker({
         language: 'it-IT',
@@ -1784,7 +1800,7 @@ $(function(){
                 stats.renderheatmap(dotchrt_global, data, 640, 320);
                 stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
             });
-    }).data('datetimepicker').setDate(range.stop);
+    }).data('datetimepicker').setLocalDate(range.stop);
 
 
 
