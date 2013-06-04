@@ -1290,7 +1290,12 @@
              "(51, 53, 51)",
              "(51, 53, 51)",
              "(51, 52, 51)",
-             "(51, 52, 51)"]};
+             "(51, 52, 51)"],
+    'summerteen': ["(0, 160, 193)",
+                   "(222, 178, 247)",
+                   "(204, 3, 114)",
+                   "(216, 105, 49)",
+                   "(235, 159, 152)"]};
     // }}}
 
     function heatcolor(map, percentage) {
@@ -1354,6 +1359,23 @@
         }
 
         return days;
+    }
+
+    function filter(els, start, stop){
+        var d1 = new Date(start);
+        var d2 = new Date(stop);
+
+        d1.setHours(0);
+        d1.setMinutes(0);
+        d1.setSeconds(0);
+
+        d2.setHours(23);
+        d2.setMinutes(59);
+        d2.setSeconds(59);
+
+        return els.filter(function(el, idx, ar){
+            return el.start >= d1.getTime() && el.start < d2.getTime() || el.stop > d1.getTime();
+        });
     }
 
     function uniquekeys(els, key){
@@ -1599,9 +1621,12 @@
     }
 
     function gr_heatmap(canvas, data, rows, cols, xlabels, ylabels, normalize) {
-        var width = canvas.width,
-            height = canvas.height,
-            ctx = canvas.getContext('2d');
+        var ctx = canvas.getContext('2d'),
+            textwidth = Math.ceil(ctx.measureText("Sun").width) + 1,
+            textheight = ~~ctx.font.match(/^\d+/)[0] + 1,
+
+            width = canvas.width - textwidth,
+            height = canvas.height - textheight;
         
         var max;
         if (normalize === undefined)
@@ -1622,45 +1647,49 @@
 
         var y_lbl = (ylabels || []),
             x_lbl = (xlabels || []);
+        ctx.strokeStyle = "rgba(0,0,0,1)";
 
         for (i = 0, y = height; i < rows; i++, y -= yratio * ystep) {
             var rmax = (normalize !== undefined ? max[i]: max),
-                gradient = ctx.createLinearGradient(0,0, width, 0),
                 previous = 0,
-                previousstop = 0;
+                previousstop = 0,
+                radius = (xratio > yratio ? xratio: yratio);
 
-            for (j = 0, x = 0; j < cols; j++, x += xratio * xstep) {
+            for (j = 0, x = textwidth; j < cols; j++, x += xratio * xstep) {
 
                 var value =(data[i * cols + j] || 0) / rmax,
                     stop = (((j/cols * 1000 + 0.005) << 1) >> 1) /1000;
- 
-                // since addColorStop wants colors in hex format, we need a conversion.
-
-                for (var k = previous , l = previousstop, koffset = (value - previous) / 4, loffset = (stop - previousstop) / 4;
-                     k < value && previous <= value || k > value && previous >= value;
-                      k += koffset, l += loffset){
-
-                    var color = heatcolor("classic", k).match(/\d+/g),
-                        hexcolor = (color[0] << 16 | color[1] << 8 | color[2]).toString(16);
-                    while(hexcolor.length < 6)
-                        hexcolor = '0' + hexcolor;
-
-                    gradient.addColorStop((((l * 1000 + 0.005) << 1)>> 1) / 1000 , '#'+hexcolor);
-                }
-                previous = value;
-                previousstop = stop;
+                var gradient = ctx.createRadialGradient(x + xratio/2, y - yratio/2, 0, x + xratio/2, y - yratio/2, radius/2);
+                gradient.addColorStop(0, 'rgba(0,0,0,'+ value+ ')');
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                if(radius == yratio)
+                    ctx.fillRect(x + xratio/2 - radius, y - yratio, radius * 2, radius);
+                else
+                    ctx.fillRect(x, y - yratio/2 - radius , radius, radius * 2);
 
             }
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, y - yratio, width, yratio);
         }
+        var imgdata = ctx.getImageData(0,0,width, height);
+        for (i = textwidth * 4; i < imgdata.data.length; i+=4) {
+            if (i % (width*4) < textwidth * 4 || i % (width * 4) > xratio * (cols + 1) * 4) {
+                imgdata.data[i + 3] = 0;
+                continue;
+            }
+            var color = heatcolor("classic", imgdata.data[i + 3] / 255).match(/\d+/g);
+            imgdata.data[i] = ~~color[0];
+            imgdata.data[i + 1] = ~~color[1];
+            imgdata.data[i + 2] = ~~color[2];
+            imgdata.data[i + 3] = 255;
+        }
+        ctx.putImageData(imgdata, 0, 0);
 
         ctx.restore();
         ctx.save();
         ctx.textAlign = "left";
         ctx.textBaseline = "bottom";
 
-        for (i = 0, y = height; i < rows; i++, y -= height / y_lbl.length) {
+        for (i = 0, y = height; i < y_lbl.length; i++, y -= (yratio * rows)/ y_lbl.length) {
             ctx.fillText(y_lbl[i] || i, 0, y); 
         }
         
@@ -1669,15 +1698,10 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
 
-        for (j = 0, x = 0; j < cols; j++, x += width / x_lbl.length) {
-            ctx.fillText(x_lbl[j] || j, x, height); 
+        for (j = 0, x = textwidth; j < x_lbl.length; j++, x += (xratio * cols) / x_lbl.length) {
+            ctx.fillText(x_lbl[j] || j, x, height + textheight); 
         }
         ctx.restore();
-
-        /*ctx.textBaseline = currenttextstyle.textBaseline;
-        ctx.textAlign = currenttextstyle.textAlign;
-        ctx.font = currenttextstyle.font;
-        ctx.fillStyle = currentfillStyle;*/
     }
 
     /*
@@ -1706,6 +1730,8 @@
         var els = [];
         for (var k in data)
             els = els.concat(data[k]);
+
+        els = filter(els, startinterval, stopinterval);
 
         var y_lbl = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         var x_lbl = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"];
@@ -1774,7 +1800,8 @@ $(function(){
 //    var range = stats.range(new Date(new Date().getTime() - )new Date());
     var range = stats.range();
     $("#input-rangestart").datetimepicker({
-        language: 'it-IT'
+        language: 'it-IT',
+        endDate: new Date()
     }).on('changeDate', function(e){
         stats.range(e.date);
         $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
