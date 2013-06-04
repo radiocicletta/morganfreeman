@@ -9,6 +9,7 @@
     var stopinterval = new Date();
     var startinterval = new Date(stopinterval.getTime() - kMonthMillisecs); // 30 days
 
+    // {{{
     var schemes = {'classic':
             ["(255, 237, 237)",
              "(255, 224, 224)",
@@ -1289,7 +1290,13 @@
              "(51, 53, 51)",
              "(51, 53, 51)",
              "(51, 52, 51)",
-             "(51, 52, 51)"]};
+             "(51, 52, 51)"],
+    'summerteen': ["(0, 160, 193)",
+                   "(222, 178, 247)",
+                   "(204, 3, 114)",
+                   "(216, 105, 49)",
+                   "(235, 159, 152)"]};
+    // }}}
 
     function heatcolor(map, percentage) {
         idx = ~~((schemes[map].length - 1) * (1 - percentage));
@@ -1354,6 +1361,23 @@
         return days;
     }
 
+    function filter(els, start, stop){
+        var d1 = new Date(start);
+        var d2 = new Date(stop);
+
+        d1.setHours(0);
+        d1.setMinutes(0);
+        d1.setSeconds(0);
+
+        d2.setHours(23);
+        d2.setMinutes(59);
+        d2.setSeconds(59);
+
+        return els.filter(function(el, idx, ar){
+            return el.start >= d1.getTime() && el.start < d2.getTime() || el.stop > d1.getTime();
+        });
+    }
+
     function uniquekeys(els, key){
         var keys = {};
         for (var i = 0, len = els.length; i < len; i++){
@@ -1390,7 +1414,6 @@
                     cycnum++;
                 }
         }
-        console.log("cycles: " + cycnum);
         return days;
     }
 
@@ -1403,8 +1426,7 @@
         var xrate = width  * rate;
         var yrate = height  * rate;
 
-        var currentstrokeStyle = ctx.strokeStyle;
-        var currentstrokeWidth = ctx.strokeWidth;
+        ctx.save();
         ctx.strokeStyle = "rgba(190,190,190,0.5)";
         ctx.strokeWidth = "0.5px";
 
@@ -1422,21 +1444,22 @@
             ctx.closePath();
             ctx.stroke();
         }
-
-        ctx.strokeStyle = currentstrokeStyle;
-        ctx.strokeWidth = currentstrokeWidth;
+        ctx.restore();
 
     }
 
 
     function gr_linechart(canvas, data, xlabels, ylabels) {
-        var width = canvas.width,
-            height = canvas.height,
-            ctx = canvas.getContext('2d');
-        
-        var max = (function(a){var max=0; for(var i=a.length; i >=0; i--) if (a[i] > max) max = a[i]; return max;})(data);
+        var max = (function(a){var max=0; for(var i=a.length; i >=0; i--) if (a[i] > max) max = a[i]; return max;})(data),
+            ctx = canvas.getContext('2d'),
+            textwidth = Math.ceil(ctx.measureText(max).width),
+            textheight = ~~ctx.font.match(/^\d+/)[0] + 1,
 
-        var xratio = width / data.length,
+            width = canvas.width - textwidth * 2,
+            height = canvas.height - textheight * 2,
+        
+
+            xratio = width / (data.length - 1),
             yratio = height / max,
 
             ystep = (yratio < 20? Math.round(20 / yratio): 1),
@@ -1444,39 +1467,49 @@
 
             i,j,x,y;
 
-        var currenttextstyle = { 
-            textBaseline: ctx.textBaseline,
-            textAlign: ctx.textAlign
-        };
+        ctx.save();
         ctx.textBaseline = "bottom";
-        ctx.textAlign = "center";
+        ctx.textAlign = "right";
 
         ctx.beginPath();
-        ctx.moveTo(0, height);
+        ctx.moveTo(textwidth, height + textheight);
 
         var strokeStyle = ctx.strokeStyle;
         var fillStyle = ctx.fillStyle;
+        var gradient = ctx.createLinearGradient(0,0, 0, height);
+        gradient.addColorStop(0,'#008300');
+        gradient.addColorStop(1,'#fff');
 
         ctx.strokeStyle = "#004300";
         ctx.fillStyle = "rgba(30, 30, 30, 0.3)";
 
-        for (i=0, x = 0, y = height; i < data.length; i += xstep, x += xratio * xstep) {
+        for (i=0, x = textwidth, y = height + textheight; i < data.length; i += xstep, x += xratio * xstep) {
+            y = height + textheight - data[i] * yratio;
             ctx.lineTo(x, y);
+            if (y < height) {
+                ctx.save();
+                ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+                ctx.textAlign = "center";
+                ctx.fillText(data[i], x, y);
+                ctx.restore();
+            }
             if (xlabels[i])
-               ctx.fillText(xlabels[i], x, height); 
-            y = height - data[i] * yratio;
+               ctx.fillText(xlabels[i], x, height + textheight * 2); 
         }
-        ctx.lineTo(width, y);
-        ctx.lineTo(width, height);
+        ctx.lineTo(width + textwidth, y);
+        ctx.lineTo(width + textwidth, height + textheight);
         ctx.closePath();
         ctx.stroke();
+        ctx.save();
+        ctx.fillStyle = gradient;
         ctx.fill();
+        ctx.restore();
 
         ctx.strokeStyle = "rgba(0,0,0,0.2)";
-        for (i = height; i > 0; i -= yratio * ystep) {
+        for (i = height + textheight; i > 0; i -= yratio * ystep) {
             ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(width, i);
+            ctx.moveTo(textwidth, i);
+            ctx.lineTo(width + textwidth, i);
             ctx.closePath();
             ctx.stroke();
         }
@@ -1486,12 +1519,10 @@
         var y_lbl = (ylabels || []);
 
         ctx.textAlign = "left";
-        for (j=0, y = height; y > 0 ; j += ystep, y -= yratio * ystep) {
+        for (j=0, y = height + textheight; y > 0 ; j += ystep, y -= yratio * ystep) {
             ctx.fillText(y_lbl[j] || j, 0, y); 
         }
-
-        ctx.textBaseline = currenttextstyle.textBaseline;
-        ctx.textAlign = currenttextstyle.textAlign;
+        ctx.restore();
     }
 
 
@@ -1534,6 +1565,10 @@
 
         var strokeStyle = ctx.strokeStyle;
         var fillStyle = ctx.fillStyle;
+        var gradient = ctx.createLinearGradient(0,0, width, height);
+        gradient.addColorStop(0,'#333');
+        gradient.addColorStop(1,'#fff');
+
 
         ctx.strokeStyle = "#004300";
         ctx.fillStyle = "rgba(30, 30, 30, 0.3)";
@@ -1556,9 +1591,12 @@
         }
         ctx.lineTo(width, y);
         ctx.lineTo(width, height);
+        ctx.save();
         ctx.closePath();
         ctx.stroke();
+        ctx.fillStyle = gradient;
         ctx.fill();
+        ctx.restore();
 
         ctx.strokeStyle = "rgba(0,0,0,0.2)";
         for (i = height; i > 0; i -= yratio * ystep) {
@@ -1583,9 +1621,12 @@
     }
 
     function gr_heatmap(canvas, data, rows, cols, xlabels, ylabels, normalize) {
-        var width = canvas.width,
-            height = canvas.height,
-            ctx = canvas.getContext('2d');
+        var ctx = canvas.getContext('2d'),
+            textwidth = Math.ceil(ctx.measureText("Sun").width) + 1,
+            textheight = ~~ctx.font.match(/^\d+/)[0] + 1,
+
+            width = canvas.width - textwidth,
+            height = canvas.height - textheight;
         
         var max;
         if (normalize === undefined)
@@ -1606,45 +1647,49 @@
 
         var y_lbl = (ylabels || []),
             x_lbl = (xlabels || []);
+        ctx.strokeStyle = "rgba(0,0,0,1)";
 
         for (i = 0, y = height; i < rows; i++, y -= yratio * ystep) {
             var rmax = (normalize !== undefined ? max[i]: max),
-                gradient = ctx.createLinearGradient(0,0, width, 0),
                 previous = 0,
-                previousstop = 0;
+                previousstop = 0,
+                radius = (xratio > yratio ? xratio: yratio);
 
-            for (j = 0, x = 0; j < cols; j++, x += xratio * xstep) {
+            for (j = 0, x = textwidth; j < cols; j++, x += xratio * xstep) {
 
                 var value =(data[i * cols + j] || 0) / rmax,
                     stop = (((j/cols * 1000 + 0.005) << 1) >> 1) /1000;
- 
-                // since addColorStop wants colors in hex format, we need a conversion.
-
-                for (var k = previous , l = previousstop, koffset = (value - previous) / 4, loffset = (stop - previousstop) / 4;
-                     k < value && previous <= value || k > value && previous >= value;
-                      k += koffset, l += loffset){
-
-                    var color = heatcolor("classic", k).match(/\d+/g),
-                        hexcolor = (color[0] << 16 | color[1] << 8 | color[2]).toString(16);
-                    while(hexcolor.length < 6)
-                        hexcolor = '0' + hexcolor;
-
-                    gradient.addColorStop((((l * 1000 + 0.005) << 1)>> 1) / 1000 , '#'+hexcolor);
-                }
-                previous = value;
-                previousstop = stop;
+                var gradient = ctx.createRadialGradient(x + xratio/2, y - yratio/2, 0, x + xratio/2, y - yratio/2, radius/2);
+                gradient.addColorStop(0, 'rgba(0,0,0,'+ value+ ')');
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                if(radius == yratio)
+                    ctx.fillRect(x + xratio/2 - radius, y - yratio, radius * 2, radius);
+                else
+                    ctx.fillRect(x, y - yratio/2 - radius , radius, radius * 2);
 
             }
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, y - yratio, width, yratio);
         }
+        var imgdata = ctx.getImageData(0,0,width, height);
+        for (i = textwidth * 4; i < imgdata.data.length; i+=4) {
+            if (i % (width*4) < textwidth * 4 || i % (width * 4) > xratio * (cols + 1) * 4) {
+                imgdata.data[i + 3] = 0;
+                continue;
+            }
+            var color = heatcolor("classic", imgdata.data[i + 3] / 255).match(/\d+/g);
+            imgdata.data[i] = ~~color[0];
+            imgdata.data[i + 1] = ~~color[1];
+            imgdata.data[i + 2] = ~~color[2];
+            imgdata.data[i + 3] = 255;
+        }
+        ctx.putImageData(imgdata, 0, 0);
 
         ctx.restore();
         ctx.save();
         ctx.textAlign = "left";
         ctx.textBaseline = "bottom";
 
-        for (i = 0, y = height; i < rows; i++, y -= height / y_lbl.length) {
+        for (i = 0, y = height; i < y_lbl.length; i++, y -= (yratio * rows)/ y_lbl.length) {
             ctx.fillText(y_lbl[i] || i, 0, y); 
         }
         
@@ -1653,15 +1698,10 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "bottom";
 
-        for (j = 0, x = 0; j < cols; j++, x += width / x_lbl.length) {
-            ctx.fillText(x_lbl[j] || j, x, height); 
+        for (j = 0, x = textwidth; j < x_lbl.length; j++, x += (xratio * cols) / x_lbl.length) {
+            ctx.fillText(x_lbl[j] || j, x, height + textheight); 
         }
         ctx.restore();
-
-        /*ctx.textBaseline = currenttextstyle.textBaseline;
-        ctx.textAlign = currenttextstyle.textAlign;
-        ctx.font = currenttextstyle.font;
-        ctx.fillStyle = currentfillStyle;*/
     }
 
     /*
@@ -1690,6 +1730,8 @@
         var els = [];
         for (var k in data)
             els = els.concat(data[k]);
+
+        els = filter(els, startinterval, stopinterval);
 
         var y_lbl = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         var x_lbl = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"];
@@ -1758,7 +1800,8 @@ $(function(){
 //    var range = stats.range(new Date(new Date().getTime() - )new Date());
     var range = stats.range();
     $("#input-rangestart").datetimepicker({
-        language: 'it-IT'
+        language: 'it-IT',
+        endDate: new Date()
     }).on('changeDate', function(e){
         stats.range(e.date);
         $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
@@ -1769,7 +1812,7 @@ $(function(){
                 stats.renderheatmap(dotchrt_global, data, 640, 320);
                 stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
             });
-    }).data('datetimepicker').setDate(range.start);
+    }).data('datetimepicker').setLocalDate(range.start);
 
     $("#input-rangestop").datetimepicker({
         language: 'it-IT',
@@ -1784,7 +1827,7 @@ $(function(){
                 stats.renderheatmap(dotchrt_global, data, 640, 320);
                 stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
             });
-    }).data('datetimepicker').setDate(range.stop);
+    }).data('datetimepicker').setLocalDate(range.stop);
 
 
 
