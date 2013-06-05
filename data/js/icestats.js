@@ -1797,13 +1797,12 @@ $(function(){
 
     var url = "http://localhost:9000";
 
-//    var range = stats.range(new Date(new Date().getTime() - )new Date());
     var range = stats.range();
     $("#input-rangestart").datetimepicker({
         language: 'it-IT',
         endDate: new Date()
     }).on('changeDate', function(e){
-        stats.range(e.date);
+        range = stats.range(e.date);
         $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
             function(data){
                 if (data === null)
@@ -1818,7 +1817,7 @@ $(function(){
         language: 'it-IT',
         endDate: new Date()
     }).on('changeDate', function(e){
-        stats.range(stats.range().start, e.date);
+        range = stats.range(stats.range().start, e.date);
         $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
             function(data){
                 if (data === null)
