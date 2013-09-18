@@ -1390,6 +1390,18 @@
         return keys;
     }
 
+    function sortkeys(els){
+        var sort = [], sortobj = {};
+        for (var k in els)
+            sort.push({k: k, v: els[k]});
+
+        sort.sort(function(a, b){return b.v - a.v;})
+            .forEach(function(el){
+                sortobj[el.k] = el.v;
+            });
+        return sortobj;
+    }
+
     function heatmapgrid(els, rows, cols ) {
         var len = rows * cols;
         var grain = kWeekMillisecs / len;
@@ -1541,7 +1553,7 @@
 
         var max = (function(a){var max=0; for(var i=a.length; i >=0; i--) if (a[i] > max) max = a[i]; return max;})(data);
 
-        var xratio = width / data.length,
+        var xratio = ((width/data.length) < 10? width/data.length: 10),
             yratio = height / max,
 
             ystep = (yratio < 20? Math.round(20 / yratio): 1),
@@ -1560,7 +1572,6 @@
         ctx.textBaseline = "bottom";
         ctx.textAlign = "left";
 
-        ctx.beginPath();
         ctx.moveTo(xpadding, height);
 
         var strokeStyle = ctx.strokeStyle;
@@ -1573,30 +1584,27 @@
         ctx.strokeStyle = "#004300";
         ctx.fillStyle = "rgba(30, 30, 30, 0.3)";
 
-        for (i=0, x = 0, y = height - data[i] * yratio; i < data.length; i += xstep, x += xratio * xstep) {
-            ctx.lineTo(x + xpadding, y);
-            ctx.lineTo(x + xratio * xstep, y);
-            ctx.lineTo(x + xratio * xstep, height);
-            ctx.lineTo(x + xratio * xstep + xpadding, height);
+        for (i=0, x = 0 ; i < data.length; i++, x += xratio * xstep) {
+            y = height - data[i] * yratio;
+            ctx.save();
+            ctx.stroke();
+            ctx.fillStyle = "rgb" + heatcolor("omg", data[i]/max );//gradient;
+            ctx.strokeStyle = "#666"; 
+            ctx.fillRect(x+xpadding, y, xratio * xstep, data[i] * yratio);
+            ctx.strokeRect(x+xpadding, y, xratio * xstep, data[i] * yratio);
+            ctx.restore();
+
+
             if (xlabels[i]) {
                 ctx.save();
                 ctx.translate(width/2, height);
                 ctx.rotate(-Math.PI/2);
                 ctx.fillStyle = "#000000";
-                //ctx.fillText(xlabels[i], x + xpadding, height); 
-                ctx.fillText(xlabels[i], 0,  x + xpadding - width/2); 
+                ctx.fillText(xlabels[i] + " (" + data[i] + ")", 0,  x + xpadding - width/2 + 10); 
                 ctx.restore();
             }
             y = height - data[i] * yratio;
         }
-        ctx.lineTo(width, y);
-        ctx.lineTo(width, height);
-        ctx.save();
-        ctx.closePath();
-        ctx.stroke();
-        ctx.fillStyle = gradient;
-        ctx.fill();
-        ctx.restore();
 
         ctx.strokeStyle = "rgba(0,0,0,0.2)";
         for (i = height; i > 0; i -= yratio * ystep) {
@@ -1750,17 +1758,17 @@
         for (var k in data)
             els = els.concat(data[k]);
 
-        var grouped_els = uniquekeys(els, key),
+        var grouped_els = sortkeys(uniquekeys(els, key)),
 
             x_lbl = (function(els){
-            var keys=[];
-            for(var k in els) {
-                var useragent = k
-                    .match(/([\/.\w]+)(?: \({0,1}([\/.\w\-]+);(?=\s)[^)]*\){0,1}){0,1}(?: ([\/.\w]+)){0,1}(?: \({0,1}(\w+)[^)]*\){0,1}(.*))*/i);
-                keys.push(useragent[1]+'\n'+useragent[3]);
-            }
+                var keys=[];
+                for(var k in els) {
+                    var useragent = k
+                        .match(/([\/.\w]+)(?: \({0,1}([\/.\w\-]+);(?=\s)[^)]*\){0,1}){0,1}(?: ([\/.\w]+)){0,1}(?: \({0,1}(\w+)[^)]*\){0,1}(.*))*/i);
+                    keys.push(useragent[1]+'\n'+useragent[3]);
+                }
                 return keys;
-        })(grouped_els),
+            })(grouped_els),
 
             new_els = (function(els){var keys=[]; for(var k in els) keys.push(els[k]); return keys;})(grouped_els);
         
@@ -1795,7 +1803,7 @@ $(function(){
     var dotchrt_global = "dotchrt-global";
     var barchrt_global = "barchrt-global";
 
-    var url = "http://localhost:9000";
+    var url = document.location.href;
 
     var range = stats.range();
     $("#input-rangestart").datetimepicker({
