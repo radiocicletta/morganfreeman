@@ -1489,6 +1489,7 @@
         var strokeStyle = ctx.strokeStyle;
         var fillStyle = ctx.fillStyle;
         var gradient = ctx.createLinearGradient(0,0, 0, height);
+        var labels = [];
         gradient.addColorStop(0,'#008300');
         gradient.addColorStop(1,'#fff');
 
@@ -1499,14 +1500,10 @@
             y = height + textheight - data[i] * yratio;
             ctx.lineTo(x, y);
             if (y < height) {
-                ctx.save();
-                ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-                ctx.textAlign = "center";
-                ctx.fillText(data[i], x, y);
-                ctx.restore();
+                labels.push({txt: data[i], x: x, y: y, fill: "rgba(0, 0, 0, 0.7)", align: 'center'}); 
             }
             if (xlabels[i])
-               ctx.fillText(xlabels[i], x, height + textheight * 2); 
+               labels.push({txt: xlabels[i], x: x, y: height + textheight * 2, fill: "rgba(30, 30, 30, 0.3)", align: 'left'}); 
         }
         ctx.lineTo(width + textwidth, y);
         ctx.lineTo(width + textwidth, height + textheight);
@@ -1525,6 +1522,13 @@
             ctx.closePath();
             ctx.stroke();
         }
+        ctx.save();
+        labels.forEach(function(el){
+            ctx.fillStyle = el.fill;
+            ctx.textAlign = el.align;
+            ctx.fillText(el.txt, el.x, el.y); 
+        });
+        ctx.restore();
 
         ctx.strokeStyle = strokeStyle;
 
