@@ -1563,7 +1563,7 @@
             ystep = (yratio < 20? Math.round(20 / yratio): 1),
             xstep = (xratio < 20? Math.round(20 / xratio): 1),
 
-            xpadding = (xratio > 4? (xratio - 4) / 2: 0),
+            xpadding = ('' + max).length * 10, //(xratio > 4? (xratio - 4) / 2: 0),
 
             i,j,x,y;
 
@@ -1578,12 +1578,19 @@
 
         ctx.moveTo(xpadding, height);
 
-        var strokeStyle = ctx.strokeStyle;
-        var fillStyle = ctx.fillStyle;
         var gradient = ctx.createLinearGradient(0,0, width, height);
         gradient.addColorStop(0,'#333');
         gradient.addColorStop(1,'#fff');
 
+        ctx.save();
+        ctx.strokeStyle = "rgba(0,0,0,0.2)";
+        for (i = height; i > 0; i -= yratio * ystep) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(width, i);
+            ctx.closePath();
+            ctx.stroke();
+        }
 
         ctx.strokeStyle = "#004300";
         ctx.fillStyle = "rgba(30, 30, 30, 0.3)";
@@ -1610,16 +1617,7 @@
             y = height - data[i] * yratio;
         }
 
-        ctx.strokeStyle = "rgba(0,0,0,0.2)";
-        for (i = height; i > 0; i -= yratio * ystep) {
-            ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(width, i);
-            ctx.closePath();
-            ctx.stroke();
-        }
-
-        ctx.strokeStyle = strokeStyle;
+        ctx.restore();
 
         var y_lbl = (ylabels || []);
 
