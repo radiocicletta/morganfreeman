@@ -45,17 +45,39 @@
                     </div>
                     <strong>Current listeners:</strong>
                 </section>
-                <section>
+                <section class="row">
                     <h2 class="page-header">Unique listeners &mdash; Global stats</h2>
-                    <canvas id="linechrt-global"></canvas>
+                    <div class="span9">
+                        <canvas data-mount="*" id="linechrt-global"></canvas>
+                    </div>
+                    <div class="span3">
+                        <ul class="well well-small unstyled">
+                            <li><strong class="label">Maximum:</strong> <span class="listeners-max"></span></li>
+                            <li><strong class="label">Minimum:</strong> <span class="listeners-min"></span></li>
+                            <li><strong class="label">Average per day:</strong> <span class="listeners-avg"></span></li> 
+                            <li><strong class="label">Median per day:</strong> <span class="listeners-med"></span></li> 
+                        </ul>
+                    </div>
                 </section>
-                <section>
-                    <h2 class="page-header">Hourly listener frequency  &mdash; Global stats</h2>
-                    <canvas id="dotchrt-global"></canvas>
+                <section class="row">
+                    <h2 class="page-header">Hourly listeners frequency  &mdash; Global stats</h2>
+                    <div class="span9">
+                        <canvas data-mount="*" id="dotchrt-global"></canvas>
+                    </div>
+                    <div class="span3">
+                        <ul class="well well-small unstyled">
+                            <li><strong class="label">Most quarter listened:</strong> </li>
+                            <li><strong class="label">Least quarted listened:</strong> </li>
+                            <li><strong class="label">Average listeners per quarter:</strong> </li> 
+                            <li><strong class="label">Median listeners per quarter:</strong> </li> 
+                        </ul>
+                    </div>
                 </section>
-                <section>
+                <section class="row">
                     <h2 class="page-header">Listeners by player &mdash; Global stats</h2>
-                    <canvas id="barchrt-global"></canvas>
+                    <div class="span9">
+                        <canvas data-mount="*" id="barchrt-global"></canvas>
+                    </div>
                 </section>
             </div>
         </div>
@@ -69,6 +91,7 @@
     <script type="text/javascript" src="/data/js/bootstrap.js"></script>
     <script type="text/javascript" src="/data/js/bootstrap-datetimepicker.js"></script>
     <script type="text/javascript" src="/data/js/icestats.js"></script>
+    <script type="text/javascript" src="/data/js/stats-ui.js"></script>
 
 </body>
 </html>

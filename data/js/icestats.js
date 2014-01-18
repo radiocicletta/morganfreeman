@@ -1,13 +1,14 @@
 
 (function(){
-    var s = {};
-    var kMonthMillisecs = 2592000000; // 30 days
-    var kWeekMillisecs  =  604800000; // 7 days
-    var kDayMillisecs   =   86400000; // 1 day
-    var kDaysInAWeek    =          7; // So OBVIOUS i feel ashamed for this
+    var s = {},
+        kMonthMillisecs = 2592000000, // 30 days
+        kWeekMillisecs  =  604800000, // 7 days
+        kDayMillisecs   =   86400000, // 1 day
+        kDaysInAWeek    =          7, // So OBVIOUS i feel ashamed for this
+        kQuartersInADay =         96,
 
-    var stopinterval = new Date();
-    var startinterval = new Date(stopinterval.getTime() - kMonthMillisecs); // 30 days
+        stopinterval = new Date(),
+        startinterval = new Date(stopinterval.getTime() - kMonthMillisecs); // 30 days
 
     // {{{
     var schemes = {'classic':
@@ -1298,12 +1299,19 @@
                    "(235, 159, 152)"]};
     // }}}
 
+
+    /* apply one of the colors in the chosen colormap
+     * given a percentage
+     */
     function heatcolor(map, percentage) {
         idx = ~~((schemes[map].length - 1) * (1 - percentage));
         return schemes[map][idx];
     }
 
 
+    /* returns an array of Date() representing
+     * a span of days from $start to $stop
+     */
     function intervaldays(start, stop) {
         var d1 = new Date(start);
         var d2 = new Date(stop);
@@ -1325,6 +1333,9 @@
         return days;
     }
 
+    /* returns an array of groups of elements
+     * sorted and grouped by days
+     */
     function chartpoints(els, start, stop, step){
         var d1 = new Date(start);
         var d2 = new Date(stop);
@@ -1347,10 +1358,14 @@
                  i < els.length; 
                      lbound = d1.getTime(), 
                      rbound = lbound + step - 1 ) {
-                if (els[i].start <= rbound && 
-                    els[i].stop >= lbound) {
+                //if (els[i].start <= rbound && 
+                //    els[i].stop >= lbound) {
+                if (els[i].start < rbound && els[i].start >= lbound ||
+                    els[i].stop > lbound && els[i].stop <= rbound) {
                     count++;
-                    els.splice(i,1);
+                    if (els[i].start <= rbound && 
+                        els[i].stop >= lbound)
+                        els.splice(i,1);
                 } else
                     i++;
             }
@@ -1374,7 +1389,9 @@
         d2.setSeconds(59);
 
         return els.filter(function(el, idx, ar){
-            return el.start >= d1.getTime() && el.start < d2.getTime() || el.stop > d1.getTime();
+            //return (el.start >= d1.getTime() && el.start < d2.getTime()) || el.stop > d1.getTime();
+            return (el.start >= d1.getTime() && el.start < d2.getTime()) || 
+                    (el.stop > d1.getTime() && el.stop <= d2.getTime());
         });
     }
 
@@ -1390,7 +1407,7 @@
         return keys;
     }
 
-    function sortkeys(els){
+    function sortbykeys(els){
         var sort = [], sortobj = {};
         for (var k in els)
             sort.push({k: k, v: els[k]});
@@ -1402,6 +1419,11 @@
         return sortobj;
     }
 
+
+    /*
+     * returns a 2-d array (the "grid") representation
+     * of the heatmap 
+     */
     function heatmapgrid(els, rows, cols ) {
         var len = rows * cols;
         var grain = kWeekMillisecs / len;
@@ -1409,25 +1431,33 @@
 
         var cycnum = 0;
         for (var i = 0; i < els.length; i++) {
-            var l = els[i];
-            var start = new Date(l.start);
-            var stop = new Date(l.stop);
+            var l = els[i],
+                start = new Date(l.start),
+                stop = new Date(l.stop),
 
-            var hourspan = ~~(Math.abs(start.getTime() - stop.getTime()) / grain);
-            var hours = ~~((start.getTime() / grain) % cols );
-                for (;
-                    hours <= ((start.getTime() / grain) % cols) + hourspan; hours++) {
-                    var idx =  (start.getDay()  * cols + hours) % len;
+                hourspan = ~~(Math.abs(start.getTime() - stop.getTime()) / grain),
+                hours = ~~((start.getTime() / grain) % cols );
+            for (;
+                hours <= ((start.getTime() / grain) % cols) + hourspan; hours++) {
+                var idx =  (start.getDay()  * cols + hours) % len;
 
-                    if (days[idx])
-                        days[idx]++;
-                    else
-                        days[idx] = 1;
-                    cycnum++;
-                }
+                if (days[idx])
+                    days[idx]++;
+                else
+                    days[idx] = 1;
+                cycnum++;
+            }
         }
         return days;
     }
+
+
+
+    /*
+     * -------------------
+     * Graphics functions
+     * -------------------
+     */
 
 
     function gr_rendergrid(canvas, rate) {
@@ -1632,7 +1662,7 @@
 
     function gr_heatmap(canvas, data, rows, cols, xlabels, ylabels, normalize) {
         var ctx = canvas.getContext('2d'),
-            textwidth = Math.ceil(ctx.measureText("Sun").width) + 1,
+            textwidth = Math.ceil(ctx.measureText("mmm").width) + 1,
             textheight = ~~ctx.font.match(/^\d+/)[0] + 1,
 
             width = canvas.width - textwidth,
@@ -1644,8 +1674,8 @@
         else 
             max = (function(a){var max=[]; for (var j = 0; j < rows; j++ ) { max.push(Math.max.apply(Math, a.slice(j * cols, j * cols + cols ).filter(function(e,i,ar){return a !== undefined;}) ));  }  return max; })(data);
 
-        var xratio = Math.round(width / cols),
-            yratio = Math.round(height / rows),
+        var xratio = Math.round((width / cols) * 10) / 10,
+            yratio = Math.round((height / rows) * 10) / 10,
 
             ystep = 1, //(yratio < 20? Math.round(20 / yratio): 1),
             xstep = 1, //(xratio < 20? Math.round(20 / xratio): 1),
@@ -1659,18 +1689,20 @@
             x_lbl = (xlabels || []);
         ctx.strokeStyle = "rgba(0,0,0,1)";
 
-        for (i = 0, y = height; i < rows; i++, y -= yratio * ystep) {
+        for (i = 0, y = height; i < rows; i++, y -= yratio) {
             var rmax = (normalize !== undefined ? max[i]: max),
                 previous = 0,
                 previousstop = 0,
                 radius = (xratio > yratio ? xratio: yratio);
 
-            for (j = 0, x = textwidth; j < cols; j++, x += xratio * xstep) {
+            for (j = 0, x = textwidth; j < cols; j++, x += xratio) {
 
                 var value =(data[i * cols + j] || 0) / rmax,
-                    stop = (((j/cols * 1000 + 0.005) << 1) >> 1) /1000;
-                var gradient = ctx.createRadialGradient(x + xratio/2, y - yratio/2, 0, x + xratio/2, y - yratio/2, radius/2);
-                gradient.addColorStop(0, 'rgba(0,0,0,'+ value+ ')');
+                    stop = (((j/cols * 1000 + 0.005) << 1) >> 1) /1000,
+                    gradient = ctx.createRadialGradient(x + xratio/2, y - yratio/2, 0, x + xratio/2, y - yratio/2, radius/2);
+                try {
+                    gradient.addColorStop(0, 'rgba(0,0,0,'+ value+ ')');
+                } catch(e){ return; }
                 gradient.addColorStop(1, 'rgba(0,0,0,0)');
                 ctx.fillStyle = gradient;
                 if(radius == yratio)
@@ -1680,19 +1712,27 @@
 
             }
         }
-        var imgdata = ctx.getImageData(0,0,width, height);
-        for (i = textwidth * 4; i < imgdata.data.length; i+=4) {
-            if (i % (width*4) < textwidth * 4 || i % (width * 4) > xratio * (cols + 1) * 4) {
-                imgdata.data[i + 3] = 0;
-                continue;
-            }
+        var imgdata = ctx.getImageData(textwidth, 0, width, height);
+        for (i = 0; i < imgdata.data.length; i+=4) {
             var color = heatcolor("classic", imgdata.data[i + 3] / 255).match(/\d+/g);
             imgdata.data[i] = ~~color[0];
             imgdata.data[i + 1] = ~~color[1];
             imgdata.data[i + 2] = ~~color[2];
             imgdata.data[i + 3] = 255;
         }
+        ctx.putImageData(imgdata, textwidth, 0);
+
+        imgdata = ctx.getImageData(0,0, textwidth, height);
+        for (i = 0; i< imgdata.data.length; i+=4){
+                imgdata.data[i + 3] = 0;
+        }
         ctx.putImageData(imgdata, 0, 0);
+
+        imgdata = ctx.getImageData(textwidth + xratio * cols, 0, width, height);
+        for (i = 0; i< imgdata.data.length; i+=4){
+                imgdata.data[i + 3] = 0;
+        }
+        ctx.putImageData(imgdata, textwidth + xratio * cols, 0);
 
         ctx.restore();
         ctx.save();
@@ -1714,10 +1754,13 @@
         ctx.restore();
     }
 
+
     /*
+     * ---------------
      * Public methods
-     *
+     * ---------------
      */
+
 
     s.renderlinechart = function(chrt, data, width, height) {
 
@@ -1728,7 +1771,7 @@
 
         var points = chartpoints(els, startinterval, stopinterval, kDayMillisecs);
 
-        var canvas = document.getElementById(chrt);
+        var canvas = (Object.prototype.toString.call(chrt) === "[object HTMLCanvasElement]"? chrt: document.getElementById(chrt));
         canvas.width = width;
         canvas.height = height;
 
@@ -1746,12 +1789,12 @@
         var y_lbl = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         var x_lbl = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24"];
 
-        var values = heatmapgrid(els, kDaysInAWeek, 96);
-        var canvas = document.getElementById(chrt);
+        var values = heatmapgrid(els, kDaysInAWeek, kQuartersInADay);
+        var canvas = (Object.prototype.toString.call(chrt) === "[object HTMLCanvasElement]"? chrt: document.getElementById(chrt));
         canvas.width = width;
         canvas.height = height;
 
-        gr_heatmap(canvas, values, kDaysInAWeek, 96, x_lbl, y_lbl);
+        gr_heatmap(canvas, values, kDaysInAWeek, kQuartersInADay, x_lbl, y_lbl);
     };
 
 
@@ -1760,7 +1803,7 @@
         for (var k in data)
             els = els.concat(data[k]);
 
-        var grouped_els = sortkeys(uniquekeys(els, key)),
+        var grouped_els = sortbykeys(uniquekeys(els, key)),
 
             x_lbl = (function(els){
                 var keys=[];
@@ -1774,7 +1817,7 @@
 
             new_els = (function(els){var keys=[]; for(var k in els) keys.push(els[k]); return keys;})(grouped_els);
         
-        var canvas = document.getElementById(chrt);
+        var canvas = (Object.prototype.toString.call(chrt) === "[object HTMLCanvasElement]"? chrt: document.getElementById(chrt));
         canvas.width = width;
         canvas.height = height;
 
@@ -1792,65 +1835,54 @@
         return { start: startinterval, stop: stopinterval };
     };
 
+    s.util = {};
+
+    s.util.unify = function(data) {
+        // rules for unifications:
+        // 1. Listeners entries must be SORTED by time
+        // 2. A listener is identified by the tuple (ip,useragent)
+        // 3. If listenerA.starttime - listenerB.stoptime <= 30secs,
+        //    the listeners MUST be merged
+        // 4. If a listener's time range is < 5 sec, MUST be deleted
+        
+        var listeners = {},
+            streams = [],
+            newdata = { global:[] };
+
+        for (var stream in data){
+            streams = streams.concat(data[stream]);
+        }
+        original = streams.length;
+        streams.sort(function(a, b){return a.start - b.start; }); //a.stop - b.start; });
+        streams.forEach(function(el, idx, ar){
+            var first, second;
+            if (! ((el.ip + el.useragent) in listeners)) {
+                listeners[el.ip + el.useragent] = el;
+                return;
+            }
+            first = listeners[el.ip + el.useragent];
+            second = el;
+            if (first.stop < second.start && second.start - first.stop >= 30000) {
+                newdata.global.push(listeners[el.ip + el.useragent]);
+                delete listeners[el.ip + el.useragent];
+            }
+            else if (first.stop < second.start && second.start - first.stop < 30000) {
+                listeners[el.ip + el.useragent] = first;
+                listeners[el.ip + el.useragent].stop = second.stop;
+            }
+            else if(first.stop >= second.start) {
+                listeners[el.ip + el.useragent] = first;
+                listeners[el.ip + el.useragent].stop = (second.stop > first.stop? second.stop: first.stop);
+            }
+        });
+        for (var listener in listeners)
+            newdata.global.push(listeners[listener]);
+
+        newdata.global = newdata.global.filter(function(el){ return el.stop - el.start >= 5000;});
+
+        return newdata;
+
+    };
+
     window.stats = s;
 })();
-
-
-// THIS WILL GO IN A SEPARATE FILE ui.js
-
-
-$(function(){
-
-    var linechrt_global = "linechrt-global";
-    var dotchrt_global = "dotchrt-global";
-    var barchrt_global = "barchrt-global";
-
-    var url = document.location.href;
-
-    var range = stats.range();
-    $("#input-rangestart").datetimepicker({
-        language: 'it-IT',
-        endDate: new Date()
-    }).on('changeDate', function(e){
-        range = stats.range(e.date);
-        $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
-            function(data){
-                if (data === null)
-                    return;
-                stats.renderlinechart(linechrt_global, data, 640, 200);
-                stats.renderheatmap(dotchrt_global, data, 640, 320);
-                stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
-            });
-    }).data('datetimepicker').setLocalDate(range.start);
-
-    $("#input-rangestop").datetimepicker({
-        language: 'it-IT',
-        endDate: new Date()
-    }).on('changeDate', function(e){
-        range = stats.range(stats.range().start, e.date);
-        $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
-            function(data){
-                if (data === null)
-                    return;
-                stats.renderlinechart(linechrt_global, data, 640, 200);
-                stats.renderheatmap(dotchrt_global, data, 640, 320);
-                stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
-            });
-    }).data('datetimepicker').setLocalDate(range.stop);
-
-
-
-    //var interval = setInterval(function() {
-        //range = stats.range(new Date() new Date());
-        $.getJSON(url + "/mount/*/" + range.start.getTime() + "/" + range.stop.getTime(),
-            function(data){
-                if (data === null)
-                    return;
-                stats.renderlinechart(linechrt_global, data, 640, 200);
-                stats.renderheatmap(dotchrt_global, data, 640, 320);
-                stats.renderbarchart(barchrt_global, data, 640, 440, 'useragent', 'vertical');
-            });
-    //    },
-    //10000);
-
-});
