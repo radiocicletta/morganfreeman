@@ -144,7 +144,7 @@ class StatsCollector(threading.Thread):
                 return
             db = DB(self.db)
             
-            mountpoints = re.findall("listclients\.xsl\?mount=/([\w.]*)", result.read())
+            mountpoints = re.findall("listclients\.xsl\?mount=/([^\"]*)", result.read())
             for mount in mountpoints:
                 try:
                     result = urllib2.urlopen(self.host + "/admin/listclients.xsl?mount=/" + mount)
