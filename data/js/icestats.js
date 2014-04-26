@@ -1504,10 +1504,15 @@
             xratio = width / (data.length - 1),
             yratio = height / max,
 
-            ystep = (yratio < 20? Math.round(20 / yratio): 1),
-            xstep = (xratio < 20? Math.round(20 / xratio): 1),
+            ystep = textheight * 2, //(yratio < 20? Math.round(20 / yratio): 1),
+            xstep = (xratio < textwidth? Math.round(textwidth / xratio): 1),
 
-            i,j,x,y;
+            i,j,x,y,
+            
+            cur = {x:null, y: null},
+            txt_cur = {x:null, y:null};
+        console.log('xstep: ' + xstep);
+        console.log('ystep: ' + ystep);
 
         ctx.save();
         ctx.textBaseline = "bottom";
@@ -1526,12 +1531,35 @@
         ctx.strokeStyle = "#004300";
         ctx.fillStyle = "rgba(30, 30, 30, 0.3)";
 
-        for (i=0, x = textwidth, y = height + textheight; i < data.length; i += xstep, x += xratio * xstep) {
+        for (i=0,
+             x = textwidth,
+             y = height + textheight,
+             cur.x = 0, cur.y = 0,
+             txt_cur.x = 0, txt_cur.y = 0;
+
+             i < data.length;
+
+             i++,
+             x += xratio) {
             y = height + textheight - data[i] * yratio;
-            ctx.lineTo(x, y);
-            if (y < height) {
-                labels.push({txt: data[i], x: x, y: y, fill: "rgba(0, 0, 0, 0.7)", align: 'center'}); 
+            // we avoid to draw if the distance between 2 points is
+            // less than 5px (width or height)
+            if ((~~x - ~~cur.x) >= 5 || Math.abs(~~y - ~~cur.y) >= 5) {
+                if (xratio > textwidth &&
+                    (Math.abs(~~x - ~~txt_cur.x) > (textwidth * ('' + data[i]).length)
+                     ||
+                     Math.abs(~~y - ~~txt_cur.y) > textheight)
+                   ) {
+                    txt_cur.x = x;
+                    txt_cur.y = y;
+                    labels.push({txt: data[i], x: x, y: y, fill: "rgba(0, 0, 0, 0.7)", align: 'center'}); 
+                }
+                cur.x = x;
+                cur.y = y;
+                ctx.lineTo(x, y);
             }
+        }
+        for (i=0, x = textwidth, y = height + textheight; i < data.length; i += xstep, x += xstep * xratio) {
             if (xlabels[i])
                labels.push({txt: xlabels[i], x: x, y: height + textheight * 2, fill: "rgba(30, 30, 30, 0.3)", align: 'left'}); 
         }
