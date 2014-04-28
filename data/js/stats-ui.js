@@ -85,10 +85,14 @@ $(function(){
                 function(data){
                     if (data === null)
                         return;
-                    var unified = stats.util.unify(data);
+                    var unified = stats.util.ua_os(
+                        stats.util.ua_players(
+                        stats.util.unify(data)
+                    ));
                     $('#linechrt-global').data('statchart').setValue(unified);
                     $('#dotchrt-global').data('statchart').setValue(unified);
-                    $('#barchrt-global').data('statchart').setValue(unified);
+                    $('#player-barchrt-global').data('statchart').setValue(unified);
+                    $('#os-barchrt-global').data('statchart').setValue(unified);
                 });
         };
 
@@ -120,12 +124,20 @@ $(function(){
             width: 640,
             height: 320 
         });
-    $('#barchrt-global').statchart({
+    $('#player-barchrt-global').statchart({
             type: 'bar',
             width: 640,
             height: 640,
             orientation: 'vertical',
-            key: 'useragent'
+            key: 'ua_browser'
+        });
+
+    $('#os-barchrt-global').statchart({
+            type: 'bar',
+            width: 640,
+            height: 640,
+            orientation: 'vertical',
+            key: 'ua_os'
         });
 
     updaterange();

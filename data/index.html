@@ -76,7 +76,13 @@
                 <section class="row">
                     <h2 class="page-header">Listeners by player &mdash; Global stats</h2>
                     <div class="span9">
-                        <canvas data-mount="*" id="barchrt-global"></canvas>
+                        <canvas data-mount="*" id="player-barchrt-global"></canvas>
+                    </div>
+                </section>
+                <section class="row">
+                    <h2 class="page-header">Listeners by Operating System &mdash; Global stats</h2>
+                    <div class="span9">
+                        <canvas data-mount="*" id="os-barchrt-global"></canvas>
                     </div>
                 </section>
             </div>
@@ -84,6 +90,7 @@
     </div>
     <script type="text/javascript" src="/data/js/zepto.js"></script>
     <script type="text/javascript" src="/data/js/zepto-extras.js"></script>
+    <script type="text/javascript" src="/data/js/ua-parser.min.js"></script>
     <script type="text/javascript">
         if (!window.jQuery)
             window.jQuery = window.Zepto;

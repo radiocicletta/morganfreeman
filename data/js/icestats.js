@@ -10,6 +10,8 @@
         stopinterval = new Date(),
         startinterval = new Date(stopinterval.getTime() - kMonthMillisecs); // 30 days
 
+    var ua = new UAParser();
+
     // {{{
     var schemes = {'classic':
             ["(255, 237, 237)",
@@ -1613,7 +1615,10 @@
             height = swap;
         }
 
-        var max = (function(a){var max=0; for(var i=a.length; i >=0; i--) if (a[i] > max) max = a[i]; return max;})(data);
+        var max = (function(a){var max=0; for(var i=a.length; i >=0; i--) if (a[i] > max) max = a[i]; return max;})(data),
+
+            textwidth = Math.ceil(ctx.measureText(max).width),
+            textheight = ~~ctx.font.match(/^\d+/)[0] + 1;
 
         var xratio = ((width/data.length) < 10? width/data.length: 10),
             yratio = height / max,
@@ -1668,8 +1673,13 @@
                 ctx.save();
                 ctx.translate(width/2, height);
                 ctx.rotate(-Math.PI/2);
+                ctx.lineCap = "round";
+                ctx.lineJoin = "round";
+                ctx.strokeWidth = "6px";
+                ctx.strokeStyle = "#bbbbbb";
                 ctx.fillStyle = "#000000";
-                ctx.fillText(xlabels[i] + " (" + data[i] + ")", 0,  x + xpadding - width/2 + 10); 
+                ctx.strokeText(xlabels[i] + " (" + data[i] + ")", textwidth,  x + xpadding - width/2 + textheight); 
+                ctx.fillText(xlabels[i] + " (" + data[i] + ")", textwidth,  x + xpadding - width/2 + textheight); 
                 ctx.restore();
             }
             y = height - data[i] * yratio;
@@ -1836,9 +1846,7 @@
             x_lbl = (function(els){
                 var keys=[];
                 for(var k in els) {
-                    var useragent = k
-                        .match(/([\/.\w]+)(?: \({0,1}([\/.\w\-]+);(?=\s)[^)]*\){0,1}){0,1}(?: ([\/.\w]+)){0,1}(?: \({0,1}(\w+)[^)]*\){0,1}(.*))*/i);
-                    keys.push(useragent[1]+'\n'+useragent[3]);
+                    keys.push(k);
                 }
                 return keys;
             })(grouped_els),
@@ -1910,6 +1918,34 @@
 
         return newdata;
 
+    };
+
+    s.util.ua_players = function(data){
+        var newdata = {} // just a shallow copy
+        for (var stream in data){
+            newdata[stream] = [];
+            data[stream].forEach(function(el, idx, ar){
+                ua.setUA(el.useragent);
+                var res = ua.getResult();
+                el.ua_browser = res.browser.name || 'Unknown';
+                newdata[stream].push(el);
+            });
+        }
+        return newdata;
+    };
+
+    s.util.ua_os = function(data){
+        var newdata = {}; // just a shallow copy
+        for (var stream in data){
+            newdata[stream] = [];
+            data[stream].forEach(function(el, idx, ar){
+                ua.setUA(el.useragent);
+                var res = ua.getResult();
+                el.ua_os = (res.os.name || 'Unknown');
+                newdata[stream].push(el);
+            });
+        }
+        return newdata;
     };
 
     window.stats = s;
