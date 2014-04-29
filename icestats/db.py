@@ -2,7 +2,7 @@ import sqlite3 as dbapi
 import os
 import time
 
-DBSCHEMA = ( """
+DBSCHEMA = ("""
 PRAGMA foreign_keys = ON;
 """,
 """create table if not exists mount (
@@ -19,6 +19,7 @@ PRAGMA foreign_keys = ON;
 );""",
 """create index mountid on listener(mount_id);
 """)
+
 
 class DB:
 
@@ -45,7 +46,8 @@ class DB:
         """insert a new mountpoint
            returns the new id"""
 
-        self.db.execute("insert or ignore into mount (name) values (?)", (mount,))
+        self.db.execute(
+            "insert or ignore into mount (name) values (?)", (mount,))
         self.db.commit()
 
         cur = self.db.execute("select id from mount where name = ? ", (mount,))
@@ -69,31 +71,39 @@ class DB:
         now = time.time()
         roundedstart = int(now) - ceiltime
 
-        print "select m.id, l.id from listener l left join mount m on (l.mount_id = m.id) where ip = %s and listenstop >= %s and m.name = %s limit 1" % (ip, roundedstart, stream)
-        cur = self.db.execute("select m.id, l.id from listener l left join mount m on (l.mount_id = m.id) where ip = ? and listenstop >= ? and m.name = ? limit 1", (ip, roundedstart * 1000, stream))
+        cur = self.db.execute(
+            "select m.id, l.id "
+            "from listener l left join mount m on (l.mount_id = m.id)"
+            " where ip = ? and listenstop >= ? and m.name = ? limit 1", (
+            ip, roundedstart * 1000, stream))
         recent = cur.fetchone()
 
-        if not recent: # a new listener appears!
+        if not recent:  # a new listener appears!
             mid = self.getmount(stream)
             if not mid:
                 mid = self.insertmount(stream)
 
-            print("insert into listener (mount_id, ip, listenstart, listenstop, useragent) values (%s, %s, %s, %s, %s)" % (mid, ip, int((now - duration) * 1000), int(now * 1000), useragent))
-            self.db.execute("insert into listener (mount_id, ip, listenstart, listenstop, useragent) values (?, ?, ?, ?, ?)", (mid, ip, int((now - duration) * 1000), int(now * 1000), useragent))
+            self.db.execute(
+                "insert into listener"
+                " (mount_id, ip, listenstart, listenstop, useragent)"
+                " values (?, ?, ?, ?, ?)", (
+                mid, ip, int((now - duration) * 1000),
+                int(now * 1000), useragent))
 
-        else: # aficionado listener
-            print("update listener set listenstop = %s where id = %s" % (int(now * 1000), int(recent[1])))
-            self.db.execute("update listener set listenstop = ? where id = ?", (int(now * 1000), int(recent[1])))
+        else:  # aficionado listener
+            self.db.execute(
+                "update listener set listenstop = ? where id = ?", (
+                int(now * 1000), int(recent[1])))
 
         self.db.commit()
-        
 
-    def get(self, mount = None, start=0, stop=0):
+    def get(self, mount=None, start=0, stop=0):
         """ retrieve informations about listeners in one
             or many streams in a range of time
             mount == '*' is a shortcut for all mounts"""
 
-        query = "select l.*, m.name from listener l left join mount m on (l.mount_id = m.id)"
+        query = "select l.*, m.name from listener l" \
+                " left join mount m on (l.mount_id = m.id)"
         queryconds = []
         queryparms = ()
         if mount != "*":
@@ -114,19 +124,17 @@ class DB:
 
         result = {}
         for listener in cur:
-            l = {   'id': listener[0],
-                    'ip': listener[2],
-                    'start': listener[3],
-                    'stop': listener[4],
-                    'useragent': listener[5]
-                }
-            if not result.has_key(listener[6]):
+            l = {'id': listener[0],
+                 'ip': listener[2],
+                 'start': listener[3],
+                 'stop': listener[4],
+                 'useragent': listener[5]
+                 }
+            if listener[6] not in result:
                 result[listener[6]] = []
             result[listener[6]].append(l)
 
         return result
-        
-        
 
     def query(self, **kwargs):
         pass
