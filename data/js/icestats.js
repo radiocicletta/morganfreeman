@@ -1948,5 +1948,15 @@
         return newdata;
     };
 
+    s.util.filter_bots = function(data){
+        var newdata = {}; // just a shallow copy
+        for (var stream in data){
+            newdata[stream] = data[stream].filter(function(el, idx, ar){
+                return el.type != 'bot';
+            });
+        }
+        return newdata;
+    };
+
     window.stats = s;
 })();

@@ -3,10 +3,19 @@
 from getopt import getopt
 import sys
 from icestats import daemon
+from settings import *
 
 if __name__ == '__main__':
 
-    args, opts = getopt(sys.argv[1:], "h:b:u:w:d", ["help","host=", "bind=", "username=", "password=", "daemonize"])
+    args, opts = getopt(
+        sys.argv[1:],
+        "h:b:u:w:d",
+        ["help",
+         "host=",
+         "bind=",
+         "username=",
+         "password=",
+         "daemonize"])
 
     daemonize = False
 
@@ -33,7 +42,10 @@ if __name__ == '__main__':
                 raise Exception()
             password = v
 
-    process = daemon.Daemon('.', host, username, password, port)
+    try:
+        process = daemon.Daemon('.', host, username, password, port, useragent_bots)
+    except:
+        process = daemon.Daemon('.', host, username, password, port)
     if daemonize:
         process.daemonize()
 

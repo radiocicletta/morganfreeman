@@ -87,8 +87,9 @@ $(function(){
                         return;
                     var unified = stats.util.ua_os(
                         stats.util.ua_players(
+                        stats.util.filter_bots(
                         stats.util.unify(data)
-                    ));
+                    )));
                     $('#linechrt-global').data('statchart').setValue(unified);
                     $('#dotchrt-global').data('statchart').setValue(unified);
                     $('#player-barchrt-global').data('statchart').setValue(unified);

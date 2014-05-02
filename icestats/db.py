@@ -1,6 +1,7 @@
 import sqlite3 as dbapi
 import os
 import time
+import re
 
 DBSCHEMA = ("""
 PRAGMA foreign_keys = ON;
@@ -23,10 +24,12 @@ PRAGMA foreign_keys = ON;
 
 class DB:
 
-    def __init__(self, patharg):
+    def __init__(self, patharg, ip=[], ua=[]):
         dbpath = "%s" % os.path.realpath(patharg)
         prepare = not os.path.exists(dbpath)
         self.db = dbapi.connect(dbpath)
+        self.ip = set(ip)
+        self.ua = set(ua)
         if prepare:
             for sql in DBSCHEMA:
                 self.db.execute(sql)
@@ -97,7 +100,7 @@ class DB:
 
         self.db.commit()
 
-    def get(self, mount=None, start=0, stop=0):
+    def get(self, mount=None, start=0, stop=0, uas=[]):
         """ retrieve informations about listeners in one
             or many streams in a range of time
             mount == '*' is a shortcut for all mounts"""
@@ -128,13 +131,20 @@ class DB:
                  'ip': listener[2],
                  'start': listener[3],
                  'stop': listener[4],
-                 'useragent': listener[5]
+                 'useragent': listener[5],
+                 'type': self.__ua_type(
+                     listener[5], uas) and 'bot' or 'listener'
                  }
-            if listener[6] not in result:
-                result[listener[6]] = []
+            result.setdefault(listener[6], [])
             result[listener[6]].append(l)
 
         return result
+
+    def __ua_type(self, agent, agentlist):
+        for exp in agentlist:
+            if re.match(exp, agent):
+                return True
+        return False
 
     def query(self, **kwargs):
         pass
