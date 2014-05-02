@@ -1513,8 +1513,6 @@
             
             cur = {x:null, y: null},
             txt_cur = {x:null, y:null};
-        console.log('xstep: ' + xstep);
-        console.log('ystep: ' + ystep);
 
         ctx.save();
         ctx.textBaseline = "bottom";
@@ -1548,8 +1546,7 @@
             // less than 5px (width or height)
             if ((~~x - ~~cur.x) >= 5 || Math.abs(~~y - ~~cur.y) >= 5) {
                 if (xratio > textwidth &&
-                    (Math.abs(~~x - ~~txt_cur.x) > (textwidth * ('' + data[i]).length)
-                     ||
+                    (Math.abs(~~x - ~~txt_cur.x) > (textwidth * ('' + data[i]).length) ||
                      Math.abs(~~y - ~~txt_cur.y) > textheight)
                    ) {
                     txt_cur.x = x;
@@ -1710,7 +1707,7 @@
         if (normalize === undefined)
             max = (function(a){var max=0; for (var j=a.length - 1; j >= 0; j--) { if (a[j] > max ) max = a[j]; }  return max; })(data);
         else 
-            max = (function(a){var max=[]; for (var j = 0; j < rows; j++ ) { max.push(Math.max.apply(Math, a.slice(j * cols, j * cols + cols ).filter(function(e,i,ar){return a !== undefined;}) ));  }  return max; })(data);
+            max = (function(a){var max=[], filter = function(e,i,ar){return a !== undefined;}; for (var j = 0; j < rows; j++ ) { max.push(Math.max.apply(Math, a.slice(j * cols, j * cols + cols ).filter(filter) ));  }  return max; })(data);
 
         var xratio = Math.round((width / cols) * 10) / 10,
             yratio = Math.round((height / rows) * 10) / 10,
@@ -1921,39 +1918,42 @@
     };
 
     s.util.ua_players = function(data){
-        var newdata = {} // just a shallow copy
+        var newdata = {}, // just a shallow copy
+            filter = function(el, idx, ar){
+                ua.setUA(el.useragent);
+                var res = ua.getBrowser();
+                el.ua_browser = res.name || 'Unknown';
+                newdata[stream].push(el);
+            };
         for (var stream in data){
             newdata[stream] = [];
-            data[stream].forEach(function(el, idx, ar){
-                ua.setUA(el.useragent);
-                var res = ua.getResult();
-                el.ua_browser = res.browser.name || 'Unknown';
-                newdata[stream].push(el);
-            });
+            data[stream].forEach(filter);
         }
         return newdata;
     };
 
     s.util.ua_os = function(data){
-        var newdata = {}; // just a shallow copy
+        var newdata = {}, // just a shallow copy
+            filter = function(el, idx, ar){
+                ua.setUA(el.useragent);
+                var res = ua.getOS();
+                el.ua_os = (res.name || 'Unknown');
+                newdata[stream].push(el);
+            };
         for (var stream in data){
             newdata[stream] = [];
-            data[stream].forEach(function(el, idx, ar){
-                ua.setUA(el.useragent);
-                var res = ua.getResult();
-                el.ua_os = (res.os.name || 'Unknown');
-                newdata[stream].push(el);
-            });
+            data[stream].forEach(filter);
         }
         return newdata;
     };
 
     s.util.filter_bots = function(data){
-        var newdata = {}; // just a shallow copy
-        for (var stream in data){
-            newdata[stream] = data[stream].filter(function(el, idx, ar){
+        var newdata = {}, // just a shallow copy
+            filter = function(el, idx, ar){
                 return el.type != 'bot';
-            });
+            };
+        for (var stream in data){
+            newdata[stream] = data[stream].filter(filter);
         }
         return newdata;
     };

@@ -208,7 +208,7 @@ class Daemon:
         self.username = username
         self.password = password
         self.bindport = bindport
-        self.useragents = uas
+        self.useragents = [re.compile(s) for s in uas]
 
     def run(self):
 

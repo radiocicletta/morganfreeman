@@ -1,7 +1,6 @@
 import sqlite3 as dbapi
 import os
 import time
-import re
 
 DBSCHEMA = ("""
 PRAGMA foreign_keys = ON;
@@ -142,7 +141,7 @@ class DB:
 
     def __ua_type(self, agent, agentlist):
         for exp in agentlist:
-            if re.match(exp, agent):
+            if exp.search(agent):
                 return True
         return False
 
