@@ -1,6 +1,7 @@
 import sqlite3 as dbapi
 import os
 import time
+import maxminddb
 
 DBSCHEMA = ("""
 PRAGMA foreign_keys = ON;
@@ -15,10 +16,17 @@ PRAGMA foreign_keys = ON;
     ip text not null,
     listenstart integer,
     listenstop integer,
-    useragent text
+    useragent text,
+    iso_code text,
+    country text
 );""",
 """create index mountid on listener(mount_id);
 """)
+MIGRATION_1 = (
+    """alter table listener add iso_code text;""",
+    """alter table listener add country text;""",
+    """pragma user_version = 1;"""
+)
 
 
 class DB:
@@ -29,9 +37,29 @@ class DB:
         self.db = dbapi.connect(dbpath)
         self.ip = set(ip)
         self.ua = set(ua)
+        self.geo = maxminddb.Reader('./GeoLite2-City.mmdb')
         if prepare:
             for sql in DBSCHEMA:
                 self.db.execute(sql)
+        cur = self.db.execute("pragma user_version")
+
+        # migration
+        if cur.fetchone()[0] < 1:
+            for sql in MIGRATION_1:
+                self.db.execute(sql)
+            cur = self.db.execute("select distinct ip from listener")
+            while True:
+                res = cur.fetchmany(1000)
+                if not res:
+                    break
+                for ip in res:
+                    iso, country = self.geoip(ip[0])
+                    self.db.execute(
+                        "update listener set iso_code = ? , country = ?"
+                        "where ip = ?",
+                        (iso, country, ip[0])
+                    )
+            self.db.commit()
 
     def mounts(self):
         """ retrieve mountpoint lists """
@@ -77,7 +105,7 @@ class DB:
             "select m.id, l.id "
             "from listener l left join mount m on (l.mount_id = m.id)"
             " where ip = ? and listenstop >= ? and m.name = ? limit 1", (
-            ip, roundedstart * 1000, stream))
+                ip, roundedstart * 1000, stream))
         recent = cur.fetchone()
 
         if not recent:  # a new listener appears!
@@ -85,17 +113,20 @@ class DB:
             if not mid:
                 mid = self.insertmount(stream)
 
+            iso, country = self.geoip(ip)
+
             self.db.execute(
                 "insert into listener"
-                " (mount_id, ip, listenstart, listenstop, useragent)"
-                " values (?, ?, ?, ?, ?)", (
-                mid, ip, int((now - duration) * 1000),
-                int(now * 1000), useragent))
+                " (mount_id, ip, listenstart, listenstop,"
+                " useragent, iso_code, country)"
+                " values (?, ?, ?, ?, ?, ?, ?)", (
+                    mid, ip, int((now - duration) * 1000),
+                    int(now * 1000), useragent, iso, country))
 
         else:  # aficionado listener
             self.db.execute(
                 "update listener set listenstop = ? where id = ?", (
-                int(now * 1000), int(recent[1])))
+                    int(now * 1000), int(recent[1])))
 
         self.db.commit()
 
@@ -131,13 +162,28 @@ class DB:
                  'start': listener[3],
                  'stop': listener[4],
                  'useragent': listener[5],
+                 'iso': listener[6],
+                 'country': listener[7],
                  'type': self.__ua_type(
                      listener[5], uas) and 'bot' or 'listener'
                  }
-            result.setdefault(listener[6], [])
-            result[listener[6]].append(l)
+            result.setdefault(listener[8], [])
+            result[listener[8]].append(l)
 
         return result
+
+    def geoip(self, ip):
+
+        geo = self.geo.get(ip)
+        try:
+            country = geo['country']['names']['en']
+        except:
+            country = ''
+        try:
+            iso = geo['country']['iso_code']
+        except:
+            iso = ''
+        return iso, country
 
     def __ua_type(self, agent, agentlist):
         for exp in agentlist:
