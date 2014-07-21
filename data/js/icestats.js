@@ -1472,7 +1472,7 @@
 
         ctx.save();
         ctx.strokeStyle = "rgba(190,190,190,0.5)";
-        ctx.strokeWidth = "0.5px";
+        ctx.lineWidth = 0.5;
 
         for (var i = height; i > 0; i -= yrate) {
             ctx.beginPath();
@@ -1562,8 +1562,8 @@
             if (xlabels[i])
                labels.push({txt: xlabels[i], x: x, y: height + textheight * 2, fill: "rgba(30, 30, 30, 0.3)", align: 'left'}); 
         }
-        ctx.lineTo(width + textwidth, y);
-        ctx.lineTo(width + textwidth, height + textheight);
+        ctx.lineTo(~~(width + textwidth) + 0.5, ~~y + 0.5);
+        ctx.lineTo(~~(width + textwidth) + 0.5, ~~(height + textheight) + 0.5);
         ctx.closePath();
         ctx.stroke();
         ctx.save();
@@ -1638,31 +1638,31 @@
 
         ctx.moveTo(xpadding, height);
 
-        var gradient = ctx.createLinearGradient(0,0, width, height);
-        gradient.addColorStop(0,'#333');
-        gradient.addColorStop(1,'#fff');
-
         ctx.save();
+        ctx.lineWidth = 1;
         ctx.strokeStyle = "rgba(0,0,0,0.2)";
         for (i = height; i > 0; i -= yratio * ystep) {
+            console.log(~~i, ~~(i + width));
             ctx.beginPath();
-            ctx.moveTo(0, i);
-            ctx.lineTo(width, i);
+            ctx.moveTo(0, ~~i - 0.5);
+            ctx.lineTo(width, ~~i - 0.5);
             ctx.closePath();
             ctx.stroke();
         }
 
-        ctx.strokeStyle = "#004300";
+        //ctx.strokeStyle = "#004300";
         ctx.fillStyle = "rgba(30, 30, 30, 0.3)";
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(0,0,0,0.2)";
 
         for (i=0, x = 0 ; i < data.length; i++, x += xratio * xstep) {
             y = height - data[i] * yratio;
             ctx.save();
             ctx.stroke();
-            ctx.fillStyle = "rgb" + heatcolor("omg", data[i]/max );//gradient;
+            ctx.fillStyle = "rgb" + heatcolor("omg", data[i]/max );
             ctx.strokeStyle = "#666"; 
             ctx.fillRect(x+xpadding, y, xratio * xstep, data[i] * yratio);
-            ctx.strokeRect(x+xpadding, y, xratio * xstep, data[i] * yratio);
+            ctx.strokeRect(~~(x+xpadding) + 0.5, ~~y + 0.5, xratio * xstep, data[i] * yratio);
             ctx.restore();
 
 
@@ -1672,8 +1672,8 @@
                 ctx.rotate(-Math.PI/2);
                 ctx.lineCap = "round";
                 ctx.lineJoin = "round";
-                ctx.strokeWidth = "6px";
-                ctx.strokeStyle = "#bbbbbb";
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = "#dddddd";
                 ctx.fillStyle = "#000000";
                 ctx.strokeText(xlabels[i] + " (" + data[i] + ")", textwidth,  x + xpadding - width/2 + textheight); 
                 ctx.fillText(xlabels[i] + " (" + data[i] + ")", textwidth,  x + xpadding - width/2 + textheight); 
