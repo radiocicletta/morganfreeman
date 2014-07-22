@@ -2,6 +2,7 @@ import sqlite3 as dbapi
 import os
 import time
 import maxminddb
+import sys
 
 DBSCHEMA = ("""
 PRAGMA foreign_keys = ON;
@@ -37,7 +38,7 @@ class DB:
         self.db = dbapi.connect(dbpath)
         self.ip = set(ip)
         self.ua = set(ua)
-        self.geo = maxminddb.Reader('./GeoLite2-City.mmdb')
+        self.geo = maxminddb.Reader(sys.path[0] + '/GeoLite2-City.mmdb')
         if prepare:
             for sql in DBSCHEMA:
                 self.db.execute(sql)
