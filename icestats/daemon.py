@@ -172,9 +172,18 @@ class StatsCollector(threading.Thread):
                     logger.error("skipping %s", mount)
                     continue
 
-                # the fourth table on listclients.xls is the relevant one
-                table = re.findall(
-                    "<table[^>]*>([^\r]*?)</table>", result.read())[3]
+                resultstr = result.read()
+                try:
+                    # the fourth table on listclients.xls is the relevant one
+                    table = re.findall(
+                        "<table[^>]*>([^\r]*?)</table>", resultstr)[3]
+                except:
+                    # 2.4.0
+                    _table = re.findall(
+                        '<table[^>]*class="colortable"[^>]*>([^\r]*?)</table>', resultstr)
+                    if not _table:
+                        continue
+                    table = _table[0]
                 listeners = re.findall("<tr[^>]*>([^\r]*?)</tr>", table)
 
                 # the first row is the table header
