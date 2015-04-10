@@ -4,6 +4,9 @@ from getopt import getopt
 import sys
 from icestats import daemon
 from settings import *
+import logging
+
+logging.captureWarnings(True)
 
 if __name__ == '__main__':
 
@@ -41,12 +44,33 @@ if __name__ == '__main__':
             if not v:
                 raise Exception()
             password = v
+    formatter = logging.Formatter(
+        '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
+    )
+    logging.basicConfig(
+        level=logging.DEBUG,
+        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+        filename='logs/access_{}.log'.format(
+            datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        )
+    )
+
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+
+    logging.getLogger('').addHandler(console)
+
+    logger = logging.getLogger(__name__)
+    logger.debug("Process starting")
 
     try:
         process = daemon.Daemon('.', host, username, password, port, useragent_bots)
+        logger.debug("Process started")
     except:
         process = daemon.Daemon('.', host, username, password, port)
+        logger.debug("Process started")
     if daemonize:
         process.daemonize()
+        logger.debug("Process daemonized")
 
     process.run()

@@ -15,7 +15,6 @@ import sys
 import json
 from StringIO import StringIO
 
-logging.basicConfig(filename='./log.log', level=logging.DEBUG)
 logger = logging.getLogger('icecast.daemon')
 
 
@@ -44,6 +43,7 @@ class StatsHTTPRequestHandler(SimpleHTTPRequestHandler):
     """
 
     def do_GET(self):
+        logger.info("GET %s", self.path)
         request = re.findall("([^/]+)", unquote(self.path))
 
         if not request or request[0] == "index":
@@ -138,6 +138,8 @@ class StatsCollector(threading.Thread):
 
     def run(self):
 
+        logger.debug("launched StatsCollector Instance")
+
         def timedupdate():
             logger.info("-- MARK --")
             auth_handler = urllib2.HTTPBasicAuthHandler()
@@ -221,6 +223,8 @@ class Daemon:
 
     def run(self):
 
+        logger.debug("Daemon initialized")
+
         mimetypes.init()
 
         stats = StatsCollector(
@@ -229,6 +233,7 @@ class Daemon:
             self.username,
             self.password,
             self.abspath)
+        logger.debug("StatsCollector initialized")
         stats.start()
 
         http = StatsThreadingTCPServer(
@@ -236,6 +241,7 @@ class Daemon:
             StatsHTTPRequestHandler,
             self.abspath,
             self.useragents)
+        logger.debug("HTTP server initialized")
         http.serve_forever()
         stats.join()
 
