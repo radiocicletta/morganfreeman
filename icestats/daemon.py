@@ -189,6 +189,7 @@ class StatsCollector(threading.Thread):
                 listeners = re.findall("<tr[^>]*>([^\r]*?)</tr>", table)
 
                 # the first row is the table header
+                logger.debug("registering %d entries", len(listeners) - 1)
                 for listener in listeners[1:]:
                     fields = re.findall("<td[^>]*>([^\r]*?)</td>", listener)
                     # fields[0]: IP
