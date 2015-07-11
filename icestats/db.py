@@ -7,6 +7,7 @@ import sys
 DBSCHEMA = ("""
 PRAGMA foreign_keys = ON;
 """,
+"""pragma user_version = 1;""",
 """create table if not exists mount (
     id integer primary key asc autoincrement,
     name text not null
