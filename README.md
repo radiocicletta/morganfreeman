@@ -15,10 +15,11 @@ Installation from source
 
     $ git clone https://github.com/radiocicletta/morganfreeman.git
     $ cd morganfreeman
-    $ virtualenv .
-    $ pip install -r requirements.txt
-    $ wget http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz
-    $ gunzip GeoLite2-City.mmdb.gz
+    $ virtualenv venv
+    $ source venv/bin/activate 
+    (morganfreeman)$ pip install -r requirements.txt
+    (morganfreeman)$ wget http://geolite.maxmind.com/download/geoip/database/GeoLite2-City.mmdb.gz
+    (morganfreeman)$ gunzip GeoLite2-City.mmdb.gz
 
 Server initialization
 ---------------------
@@ -27,7 +28,7 @@ The server-side collect-and-store engine is a standalone multithread process. A 
 
 run the server simply by invoking from shell (inside the virtualenv):
 
-    $ python morganfreeman/frosty.py -h <hostname> -u <username> -w <password> -b <bindport> [-d]
+    (morganfreeman)$ python morganfreeman/frosty.py -h <hostname> -u <username> -w <password> -b <bindport> [-d]
 
 * *hostname* is the icecast server to query (e.g. http://radiocicletta.it:8000 )
 * *username* and *password* are credentials required to read the \*xsl pages provided by icecast
