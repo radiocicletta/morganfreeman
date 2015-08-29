@@ -127,7 +127,7 @@ class StatsCollector(threading.Thread):
 
     daemon = True
 
-    def __init__(self, db, host, user, pw, realm='Icecast2 Server' path='.'):
+    def __init__(self, db, host, user, pw, realm='Icecast2 Server', path='.'):
         threading.Thread.__init__(self)
 
         self.host = host
@@ -236,7 +236,7 @@ class Daemon:
             self.host,
             self.username,
             self.password,
-            self.realm
+            self.realm,
             self.abspath)
         logger.debug("StatsCollector initialized")
         stats.start()
