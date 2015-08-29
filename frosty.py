@@ -13,15 +13,18 @@ if __name__ == '__main__':
 
     args, opts = getopt(
         sys.argv[1:],
-        "h:b:u:w:d",
+        "h:b:u:w:r:d",
         ["help",
          "host=",
          "bind=",
          "username=",
          "password=",
+         "realm=",
          "daemonize"])
 
     daemonize = False
+
+    realm = None
 
     for k, v in args:
         if k == '--help':
@@ -45,6 +48,9 @@ if __name__ == '__main__':
             if not v:
                 raise Exception()
             password = v
+        elif k in ('-r', '--realm'):
+            realm = v
+
     formatter = logging.Formatter(
         '%(asctime)s %(name)-12s %(levelname)-8s %(message)s'
     )
@@ -65,10 +71,10 @@ if __name__ == '__main__':
     logger.debug("Process starting")
 
     try:
-        process = daemon.Daemon('.', host, username, password, port, useragent_bots)
+        process = daemon.Daemon('.', host, username, password, realm, port, useragent_bots)
         logger.debug("Process started")
     except:
-        process = daemon.Daemon('.', host, username, password, port)
+        process = daemon.Daemon('.', host, username, password, realm, port)
         logger.debug("Process started")
     if daemonize:
         process.daemonize()

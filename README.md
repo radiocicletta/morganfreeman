@@ -28,7 +28,7 @@ The server-side collect-and-store engine is a standalone multithread process. A 
 
 run the server simply by invoking from shell (inside the virtualenv):
 
-    (morganfreeman)$ python morganfreeman/frosty.py -h <hostname> -u <username> -w <password> -b <bindport> [-d]
+    (morganfreeman)$ python morganfreeman/frosty.py -h <hostname> -u <username> -w <password> -b <bindport> [-r realm] [-d]
 
 * *hostname* is the icecast server to query (e.g. http://radiocicletta.it:8000 )
 * *username* and *password* are credentials required to read the \*xsl pages provided by icecast

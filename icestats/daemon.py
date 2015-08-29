@@ -127,12 +127,13 @@ class StatsCollector(threading.Thread):
 
     daemon = True
 
-    def __init__(self, db, host, user, pw, path='.'):
+    def __init__(self, db, host, user, pw, realm='Icecast2 Server' path='.'):
         threading.Thread.__init__(self)
 
         self.host = host
         self.user = user
         self.pw = pw
+        self.realm = realm
         self.db = db
         self.abspath = path
 
@@ -144,7 +145,7 @@ class StatsCollector(threading.Thread):
             logger.info("-- MARK --")
             auth_handler = urllib2.HTTPBasicAuthHandler()
             auth_handler.add_password(
-                realm="Icecast2 Server",
+                realm=self.realm,
                 uri=self.host + "/admin/",
                 user=self.user,
                 passwd=self.pw)
@@ -212,6 +213,7 @@ class Daemon:
                  host,
                  username,
                  password,
+                 realm,
                  bindport=9000,
                  uas=[]):
 
@@ -219,6 +221,7 @@ class Daemon:
         self.host = host
         self.username = username
         self.password = password
+        self.realm = realm
         self.bindport = bindport
         self.useragents = [re.compile(s) for s in uas]
 
@@ -233,6 +236,7 @@ class Daemon:
             self.host,
             self.username,
             self.password,
+            self.realm
             self.abspath)
         logger.debug("StatsCollector initialized")
         stats.start()
