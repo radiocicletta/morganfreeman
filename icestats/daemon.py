@@ -152,7 +152,7 @@ class StatsCollector(threading.Thread):
             auth_handler_mounts = urllib2.HTTPBasicAuthHandler()
             auth_handler_mounts.add_password(
                 realm=self.realm,
-                uri=self.host + "/admin/listclients.xsl",
+                uri=self.host + "/admin/listmounts.xsl",
                 user=self.user,
                 passwd=self.pw)
             opener_mounts = urllib2.build_opener(auth_handler_mounts)
