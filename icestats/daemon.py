@@ -149,8 +149,14 @@ class StatsCollector(threading.Thread):
                 uri=self.host + "/admin/",
                 user=self.user,
                 passwd=self.pw)
-            opener = urllib2.build_opener(auth_handler)
-            urllib2.install_opener(opener)
+            auth_handler_mounts = urllib2.HTTPBasicAuthHandler()
+            auth_handler_mounts.add_password(
+                realm=self.realm,
+                uri=self.host + "/admin/listclients.xsl",
+                user=self.user,
+                passwd=self.pw)
+            opener_mounts = urllib2.build_opener(auth_handler_mounts)
+            urllib2.install_opener(opener_mounts)
             # 1. retrieve all the current mount points
             # 2. for each mount point
             #   gather information about listeners
@@ -168,6 +174,14 @@ class StatsCollector(threading.Thread):
             mountpoints = re.findall(
                 "listclients\.xsl\?mount=/([^\"]*)", result.read())
             for mount in mountpoints:
+                h_m = urllib2.HTTPBasicAuthHandler()
+                h_m.add_password(
+                    realm=self.realm,
+                    uri=self.host + "/admin/listclients.xsl?mount=/" + mount,
+                    user=self.user,
+                    passwd=self.pw)
+                o_m = urllib2.build_opener(h_m)
+                urllib2.install_opener(o_m)
                 try:
                     result = urllib2.urlopen(
                         self.host + "/admin/listclients.xsl?mount=/" + mount)
