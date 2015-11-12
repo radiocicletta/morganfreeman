@@ -17,6 +17,10 @@ from StringIO import StringIO
 
 logger = logging.getLogger('icecast.daemon')
 
+ICECAST_V_2_3 = '2.3.'
+ICECAST_V_2_4 = '2.4.'
+ICECAST_V_KH = '-kh'
+
 
 class StatsThreadingTCPServer(ThreadingTCPServer):
 
@@ -140,6 +144,20 @@ class StatsCollector(threading.Thread):
     def run(self):
 
         logger.debug("launched StatsCollector Instance")
+        try:
+            result = urllib2.urlopen(self.host + "/server_version.xsl")
+        except Exception as e:
+            print e
+            logger.error("Failed update: %s", e)
+            result = None
+        resultstr = result.read()
+        server_info = dict(
+            re.findall(
+                '<tr[^>]*>[\r\s]*<td[^>]*>([^\r<>]*?)</td>[\s\r]*'
+                '<td[^>]*class="streamdata"[^>]*>([^\r<>]*?)</td>',
+                resultstr)
+            )
+        server_version = re.match("Icecast (.*)", server_info['Version']).groups(0)
 
         def timedupdate():
             logger.info("-- MARK --")
@@ -191,9 +209,10 @@ class StatsCollector(threading.Thread):
 
                 resultstr = result.read()
                 try:
-                    # the fourth table on listclients.xls is the relevant one
+                    # the latest (fourth in vanilla, third in -kh) table
+                    # on listclients.xls is the relevant one
                     table = re.findall(
-                        "<table[^>]*>([^\r]*?)</table>", resultstr)[3]
+                        "<table[^>]*>([^\r]*?)</table>", resultstr)[-1]
                 except:
                     # 2.4.0
                     _table = re.findall(
@@ -203,15 +222,29 @@ class StatsCollector(threading.Thread):
                     table = _table[0]
                 listeners = re.findall("<tr[^>]*>([^\r]*?)</tr>", table)
 
-                # the first row is the table header
-                logger.debug("registering %d entries", len(listeners) - 1)
-                for listener in listeners[1:]:
+                if ICECAST_V_KH in server_version:
+                    rowskip = 0
+                else:
+                    rowskip = 1
+                # in icecast vanilla, first row is the
+                # table header. in -kh, the header is enclosed in <thead>
+                # without use of <tr>
+                logger.debug("registering %d entries", len(listeners) - rowskip)
+                for listener in listeners[rowskip:]:
                     fields = re.findall("<td[^>]*>([^\r]*?)</td>", listener)
-                    # fields[0]: IP
-                    # fields[1]: Seconds since connection
-                    # fields[2]: user-agent
-                    # fields[3]: useless kick link
-                    db.record(mount, fields[0], int(fields[1]), fields[2])
+                    if not ICECAST_V_KH in server_version: # vanilla
+                        # fields[0]: IP
+                        # fields[1]: Seconds since connection
+                        # fields[2]: user-agent
+                        # fields[3]: action
+                        db.record(mount, fields[0], int(fields[1]), fields[2])
+                    else:
+                        # fields[0]: IP
+                        # fields[1]: Seconds since connection
+                        # fields[2]: lag
+                        # fields[3]: user-agent
+                        # fields[4]: action
+                        db.record(mount, fields[0], int(fields[1]), fields[3])
 
         timedupdate()
         while True:
