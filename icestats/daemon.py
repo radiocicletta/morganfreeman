@@ -154,7 +154,7 @@ class StatsCollector(threading.Thread):
         server_info = dict(
             re.findall(
                 '<tr[^>]*>[\r\s]*<td[^>]*>([^\r<>]*?)</td>[\s\r]*'
-                '<td[^>]*class="streamdata"[^>]*>([^\r<>]*?)</td>',
+                '<td[^>]*>([^\r<>]*?)</td>',
                 resultstr)
             )
         server_version = re.match("Icecast (.*)", server_info['Version']).groups(0)
