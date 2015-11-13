@@ -157,7 +157,7 @@ class StatsCollector(threading.Thread):
                 '<td[^>]*>([^\r<>]*?)</td>',
                 resultstr)
             )
-        server_version = re.match("Icecast (.*)", server_info['Version']).groups(0)
+        server_version = re.match("Icecast (.*)", server_info['Version']).groups()[0]
 
         def timedupdate():
             logger.info("-- MARK --")
