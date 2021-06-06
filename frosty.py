@@ -1,4 +1,4 @@
-#!/bin/env python2.7
+#!/bin/env python3
 
 from getopt import getopt
 import sys
@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     for k, v in args:
         if k == '--help':
-            print "ZOMG"
+            print("ZOMG")
             sys.exit(1)
         elif k in ('-d', '--daemonize'):
             daemonize = True

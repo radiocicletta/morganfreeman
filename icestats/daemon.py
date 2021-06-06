@@ -2,18 +2,18 @@ __version__ = "0.1"
 __author__ = "radiocicletta <radiocicletta@gmail.com>"
 
 import threading
-from SocketServer import ThreadingTCPServer
-from SimpleHTTPServer import SimpleHTTPRequestHandler
-from db import DB
+from socketserver import ThreadingTCPServer
+from http.server import SimpleHTTPRequestHandler
+from .db import DB
 import logging
-import urllib2
-from urllib import unquote
+import urllib.request, urllib.error, urllib.parse
+from urllib.parse import unquote
 import re
 import mimetypes
 import os
 import sys
 import json
-from StringIO import StringIO
+from io import StringIO
 
 logger = logging.getLogger('icecast.daemon')
 
@@ -145,9 +145,9 @@ class StatsCollector(threading.Thread):
 
         logger.debug("launched StatsCollector Instance")
         try:
-            result = urllib2.urlopen(self.host + "/server_version.xsl")
+            result = urllib.request.urlopen(self.host + "/server_version.xsl")
         except Exception as e:
-            print e
+            print(e)
             logger.error("Failed update: %s", e)
             result = None
         resultstr = result.read()
@@ -161,26 +161,26 @@ class StatsCollector(threading.Thread):
 
         def timedupdate():
             logger.info("-- MARK --")
-            auth_handler = urllib2.HTTPBasicAuthHandler()
+            auth_handler = urllib.request.HTTPBasicAuthHandler()
             auth_handler.add_password(
                 realm=self.realm,
                 uri=self.host + "/admin/",
                 user=self.user,
                 passwd=self.pw)
-            auth_handler_mounts = urllib2.HTTPBasicAuthHandler()
+            auth_handler_mounts = urllib.request.HTTPBasicAuthHandler()
             auth_handler_mounts.add_password(
                 realm=self.realm,
                 uri=self.host + "/admin/listmounts.xsl",
                 user=self.user,
                 passwd=self.pw)
-            opener_mounts = urllib2.build_opener(auth_handler_mounts)
-            urllib2.install_opener(opener_mounts)
+            opener_mounts = urllib.request.build_opener(auth_handler_mounts)
+            urllib.request.install_opener(opener_mounts)
             # 1. retrieve all the current mount points
             # 2. for each mount point
             #   gather information about listeners
             #   store in database
             try:
-                result = urllib2.urlopen(self.host + "/admin/listmounts.xsl")
+                result = urllib.request.urlopen(self.host + "/admin/listmounts.xsl")
             except Exception as e:
                 logger.error("Failed update: %s", e)
                 result = None
@@ -192,16 +192,16 @@ class StatsCollector(threading.Thread):
             mountpoints = re.findall(
                 "listclients\.xsl\?mount=/([^\"]*)", result.read())
             for mount in mountpoints:
-                h_m = urllib2.HTTPBasicAuthHandler()
+                h_m = urllib.request.HTTPBasicAuthHandler()
                 h_m.add_password(
                     realm=self.realm,
                     uri=self.host + "/admin/listclients.xsl?mount=/" + mount,
                     user=self.user,
                     passwd=self.pw)
-                o_m = urllib2.build_opener(h_m)
-                urllib2.install_opener(o_m)
+                o_m = urllib.request.build_opener(h_m)
+                urllib.request.install_opener(o_m)
                 try:
-                    result = urllib2.urlopen(
+                    result = urllib.request.urlopen(
                         self.host + "/admin/listclients.xsl?mount=/" + mount)
                 except:
                     logger.error("skipping %s", mount)
